@@ -1130,7 +1130,7 @@ async def websocket_endpoint(websocket: WebSocket):
         manager.disconnect(websocket)
 
 
-def start_dashboard(host="127.0.0.1", port=8000):
+def start_dashboard(host="0.0.0.0", port=8000):  # Змінити з 127.0.0.1 на 0.0.0.0
     """Запуск дашборду в окремому потоці"""
 
     def run():

@@ -239,7 +239,7 @@ class ArbitrageBot:
 def main():
     # Запускаємо дашборд
     try:
-        dashboard_thread = start_dashboard(host="127.0.0.1", port=8000)
+        dashboard_thread = start_dashboard(host="0.0.0.0", port=5002)
     except Exception as e:
         logger.warning(f"Failed to start dashboard: {e}")
 

@@ -553,21 +553,21 @@ HTML_PAGE = """
             <div class="chart-card">
                 <h3>📊 Теплова карта прибутку (по годинах та днях)</h3>
                 <div class="heatmap-controls">
-                <label>Тип угод: 
-                    <select id="heatmap-type" onchange="loadHeatmap()">
-                        <option value="all">Всі можливості</option>
-                        <option value="confirmed">Лише підтверджені</option>
-                    </select>
-                </label>
-                <label>Період: 
-                    <select id="heatmap-days" onchange="loadHeatmap()">
-                        <option value="7">7 днів</option>
-                        <option value="14">14 днів</option>
-                        <option value="30" selected>30 днів</option>
-                        <option value="60">60 днів</option>
-                    </select>
-                </label>
-            </div>
+                    <label>Тип угод: 
+                        <select id="heatmap-type" onchange="loadHeatmap()">
+                            <option value="all">Всі можливості</option>
+                            <option value="confirmed">Лише підтверджені</option>
+                        </select>
+                    </label>
+                    <label>Період: 
+                        <select id="heatmap-days" onchange="loadHeatmap()">
+                            <option value="7">7 днів</option>
+                            <option value="14">14 днів</option>
+                            <option value="30" selected>30 днів</option>
+                            <option value="60">60 днів</option>
+                        </select>
+                    </label>
+                </div>
                 <div id="heatmap-chart" style="height: 400px; margin-top: 10px;"></div>
                 <div class="heatmap-legend">
                     <span>💰 Середній прибуток (грн):</span>
@@ -682,7 +682,7 @@ HTML_PAGE = """
 
         async function rejectAllOpportunities() {
             if (!confirm('⚠️ ВИ ДІЙСНО ХОЧЕТЕ ВІДХИЛИТИ ВСІ МОЖЛИВОСТІ?\\nЦю дію НЕ МОЖНА скасувати!')) return;
-            if (!confirm(`Видалити всі можливості, що очікують підтвердження?`)) return;
+            if (!confirm('Видалити всі можливості, що очікують підтвердження?')) return;
             try {
                 const resp = await fetch('/api/opportunities/reject-all', { method: 'POST' });
                 const data = await resp.json();
@@ -696,103 +696,98 @@ HTML_PAGE = """
         }
 
         async function loadHeatmap() {
-    const days = document.getElementById('heatmap-days').value;
-    const type = document.getElementById('heatmap-type').value;
-    try {
-        const resp = await fetch(`/api/heatmap?days=${days}&type=${type}`);
-        const data = await resp.json();
+            const days = document.getElementById('heatmap-days').value;
+            const type = document.getElementById('heatmap-type').value;
+            try {
+                const resp = await fetch(`/api/heatmap?days=${days}&type=${type}`);
+                const data = await resp.json();
 
-        const colorscale = [
-            [0, '#90be6d'],
-            [0.33, '#f9c74f'],
-            [0.66, '#f9844a'],
-            [1, '#f44336']
-        ];
+                const colorscale = [
+                    [0, '#90be6d'],
+                    [0.33, '#f9c74f'],
+                    [0.66, '#f9844a'],
+                    [1, '#f44336']
+                ];
 
-        const trace = {
-            z: data.data,
-            x: data.hours,
-            y: data.days,
-            type: 'heatmap',
-            colorscale: colorscale,
-            showscale: true,
-            text: data.data.map(row => row.map(() => '')),  // ← ПУСТІ ТЕКСТИ
-            textfont: { size: 10 },
-            hovertemplate: '<b>%{y}</b> %{x}:00<br>Середній прибуток: <b>%{z:.0f} грн</b><br>Кількість угод: <b>%{text}</b><extra></extra>',
-            texttemplate: '%{text}'
-        };
+                const trace = {
+                    z: data.data,
+                    x: data.hours,
+                    y: data.days,
+                    type: 'heatmap',
+                    colorscale: colorscale,
+                    showscale: true,
+                    text: data.data.map(row => row.map(() => '')),
+                    textfont: { size: 10 },
+                    hovertemplate: '<b>%{y}</b> %{x}:00<br>Середній прибуток: <b>%{z:.0f} грн</b><br><extra></extra>',
+                    texttemplate: '%{text}'
+                };
 
-        // Додаємо кількість угод в hover
-        const counts = data.counts;
-        
-        const layout = {
-            title: { 
-                text: `Середній прибуток по годинах (останні ${days} днів)`, 
-                font: { size: 14 } 
-            },
-            xaxis: { 
-                title: 'Година дня', 
-                tickmode: 'linear', 
-                tick0: 0, 
-                dtick: 2, 
-                tickangle: 0 
-            },
-            yaxis: { 
-                title: 'День тижня', 
-                autorange: 'reversed' 
-            },
-            height: 350,
-            margin: { l: 60, r: 40, t: 50, b: 40 },
-            hoverlabel: {
-                bgcolor: 'white',
-                font: { size: 12, color: '#333' }
-            }
-        };
+                const counts = data.counts;
 
-        if (heatmapChart) {
-            Plotly.react('heatmap-chart', [trace], layout);
-        } else {
-            heatmapChart = Plotly.newPlot('heatmap-chart', [trace], layout);
+                const layout = {
+                    title: { 
+                        text: `Середній прибуток по годинах (останні ${days} днів)`, 
+                        font: { size: 14 } 
+                    },
+                    xaxis: { 
+                        title: 'Година дня', 
+                        tickmode: 'linear', 
+                        tick0: 0, 
+                        dtick: 2, 
+                        tickangle: 0 
+                    },
+                    yaxis: { 
+                        title: 'День тижня', 
+                        autorange: 'reversed' 
+                    },
+                    height: 350,
+                    margin: { l: 60, r: 40, t: 50, b: 40 },
+                    hoverlabel: {
+                        bgcolor: 'white',
+                        font: { size: 12, color: '#333' }
+                    }
+                };
+
+                if (heatmapChart) {
+                    Plotly.react('heatmap-chart', [trace], layout);
+                } else {
+                    heatmapChart = Plotly.newPlot('heatmap-chart', [trace], layout);
+                }
+
+                updateHeatmapStats(data, counts);
+            } catch(e) { console.error(e); }
         }
 
-        updateHeatmapStats(data, counts);
-    } catch(e) { console.error(e); }
-}
+        function updateHeatmapStats(data, counts) {
+            let bestProfit = 0;
+            let bestDay = '', bestHour = 0;
+            let bestCount = 0;
 
-         updateHeatmapStats(data, counts);
-    } catch(e) { console.error(e); }
-}
+            for (let d = 0; d < data.days.length; d++) {
+                for (let h = 0; h < data.hours.length; h++) {
+                    if (data.data[d][h] > bestProfit) {
+                        bestProfit = data.data[d][h];
+                        bestDay = data.days[d];
+                        bestHour = h;
+                        bestCount = counts ? counts[d][h] : 0;
+                    }
+                }
+            }
 
-function updateHeatmapStats(data, counts) {
-    let bestProfit = 0;
-    let bestDay = '', bestHour = 0;
-    let bestCount = 0;
-    
-    for (let d = 0; d < data.days.length; d++) {
-        for (let h = 0; h < data.hours.length; h++) {
-            if (data.data[d][h] > bestProfit) {
-                bestProfit = data.data[d][h];
-                bestDay = data.days[d];
-                bestHour = h;
-                bestCount = counts ? counts[d][h] : 0;
+            let statsDiv = document.getElementById('heatmap-stats');
+            if (!statsDiv) {
+                statsDiv = document.createElement('div');
+                statsDiv.id = 'heatmap-stats';
+                statsDiv.style.cssText = 'margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 10px; text-align: center;';
+                document.querySelector('.heatmap-legend').after(statsDiv);
+            }
+
+            if (bestProfit > 0) {
+                statsDiv.innerHTML = `<strong>📈 Найкращий час для арбітражу:</strong> ${bestDay} ${bestHour}:00 (середній прибуток ${bestProfit.toFixed(0)} грн за угоду, всього угод: ${bestCount})`;
+            } else {
+                statsDiv.innerHTML = `<strong>📈 Немає даних за вибраний період</strong>`;
             }
         }
-    }
-    
-    let statsDiv = document.getElementById('heatmap-stats');
-    if (!statsDiv) {
-        statsDiv = document.createElement('div');
-        statsDiv.id = 'heatmap-stats';
-        statsDiv.style.cssText = 'margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 10px; text-align: center;';
-        document.querySelector('.heatmap-legend').after(statsDiv);
-    }
-    
-    if (bestProfit > 0) {
-        statsDiv.innerHTML = `<strong>📈 Найкращий час для арбітражу:</strong> ${bestDay} ${bestHour}:00 (середній прибуток ${bestProfit.toFixed(0)} грн за угоду, всього угод: ${bestCount})`;
-    } else {
-        statsDiv.innerHTML = `<strong>📈 Немає даних за вибраний період</strong>`;
-    }
-}
 
         async function confirmOpportunity(id, buyAmount, sellAmount, profit, buyMerchant, sellMerchant) {
             if (!confirm(`Підтвердити виконання можливості #${id}?\\nПрибуток: +${profit} UAH\\nВід: ${buyMerchant} → ${sellMerchant}`)) return;
@@ -900,7 +895,7 @@ function updateHeatmapStats(data, counts) {
         function updateTable(opps) {
             const tbody = document.getElementById('opportunities-body');
             if (!opps || opps.length === 0) { 
-                tbody.innerHTML = '<tr><td colspan="9" class="loading">📭 Немає можливостей, що очікують підтвердження</td></tr>'; 
+                tbody.innerHTML = '<tr><td colspan="9" class="loading">📭 Немає можливостей, що очікують підтвердження</td></tr>';
                 return; 
             }
             tbody.innerHTML = opps.map(o => {
@@ -1199,6 +1194,7 @@ async def get_heatmap(days: int = 30, type: str = "all"):
     """API для отримання даних теплової карти"""
     return db.get_heatmap_data(days=days, type=type)
 
+
 @app.get("/api/heatmap-test")
 async def test_heatmap():
     """Тестовий ендпоінт для перевірки"""
@@ -1207,6 +1203,7 @@ async def test_heatmap():
         return {"success": True, "data": data}
     except Exception as e:
         return {"success": False, "error": str(e)}
+
 
 @app.post("/api/reset-nbu-limit")
 async def reset_nbu_limit():

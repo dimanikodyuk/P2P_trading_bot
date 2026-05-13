@@ -259,15 +259,24 @@ class DatabaseManager:
         finally:
             session.close()
 
-    def get_heatmap_data(self, days: int = 30) -> Dict:
+    def get_heatmap_data(self, days: int = 30, type: str = "all") -> Dict:
         """Отримати дані для теплової карти прибутку по годинах та днях"""
         session = self.Session()
         try:
             since = datetime.now() - timedelta(days=days)
-            # ВСІ можливості (без фільтра)
-            opportunities = session.query(Opportunity).filter(
-                Opportunity.timestamp >= since
-            ).all()
+
+            # Фільтр за типом угод
+            if type == "confirmed":
+                # Тільки підтверджені угоди
+                opportunities = session.query(Opportunity).filter(
+                    Opportunity.timestamp >= since,
+                    Opportunity.alert_sent == True
+                ).all()
+            else:
+                # Всі можливості
+                opportunities = session.query(Opportunity).filter(
+                    Opportunity.timestamp >= since
+                ).all()
 
             # Підготовка даних: [день_тижня][година] = сума_прибутку
             heatmap_data = [[0] * 24 for _ in range(7)]

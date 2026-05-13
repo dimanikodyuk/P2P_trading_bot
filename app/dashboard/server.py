@@ -149,11 +149,11 @@ HTML_PAGE = """
         .refresh-btn:hover, .reset-btn:hover {
             opacity: 0.9;
         }
-        
+
         .heatmap-controls {
             margin-bottom: 15px;
         }
-        
+
         .heatmap-controls select {
             padding: 5px 10px;
             border-radius: 5px;
@@ -162,7 +162,7 @@ HTML_PAGE = """
             cursor: pointer;
             margin-left: 10px;
         }
-        
+
         .legend-gradient {
             display: inline-block;
             width: 200px;
@@ -171,7 +171,7 @@ HTML_PAGE = """
             background: linear-gradient(90deg, #90be6d, #f9c74f, #f9844a, #f44336);
             border-radius: 10px;
         }
-        
+
         .heatmap-legend {
             display: flex;
             align-items: center;
@@ -542,8 +542,6 @@ HTML_PAGE = """
                 </div>
             </div>
         </div>
-        
-        
 
         <div class="opportunities-section">
             <h2>🔔 Останні можливості (очікують підтвердження)</h2>
@@ -574,7 +572,7 @@ HTML_PAGE = """
             <div class="table-container">
                 <table id="completed-deals-table">
                     <thead>
-                        <tr><th>ID</th><th>Час</th><th>Сума (UAH)</th><th>USDT</th><th>Прибуток</th><th>Продавець</th><th>Покупець</th><th>Статус</th></table>
+                        <tr><th>ID</th><th>Час</th><th>Сума (UAH)</th><th>USDT</th><th>Прибуток</th><th>Продавець</th><th>Покупець</th><th>Статус</th></tr>
                     </thead>
                     <tbody id="completed-deals-body">
                         <tr><td colspan="8" class="loading">Завантаження...</td></tr>
@@ -599,31 +597,28 @@ HTML_PAGE = """
     </div>
 
     <script>
-        let spreadChart = null, profitChart = null, ws = null;
-        
-        
+        let spreadChart = null, profitChart = null, heatmapChart = null, ws = null;
+
         function formatNumber(num, d=2) { return num ? num.toLocaleString('uk-UA', {minFractionDigits:d, maxFractionDigits:d}) : '---'; }
         function formatProfit(num) { return num ? (num >= 0 ? `+${formatNumber(num)}` : `-${formatNumber(Math.abs(num))}`) : '---'; }
 
         async function resetNBU() {
-        if (!confirm('🏦 Скинути ліміт НБУ?\\nВсі використані кошти будуть обнулені.')) return;
-        
-                try {
-                    const resp = await fetch('/api/reset-nbu-limit', { method: 'POST' });
-                    const data = await resp.json();
-                    if (data.success) {
-                        alert('✅ Ліміт НБУ скинуто!');
-                        loadNBULimit();
-                    } else {
-                        alert('❌ Помилка: ' + data.error);
-                    }
-                } catch(e) { console.error(e); }
-            }
+            if (!confirm('🏦 Скинути ліміт НБУ?\\nВсі використані кошти будуть обнулені.')) return;
+            try {
+                const resp = await fetch('/api/reset-nbu-limit', { method: 'POST' });
+                const data = await resp.json();
+                if (data.success) {
+                    alert('✅ Ліміт НБУ скинуто!');
+                    loadNBULimit();
+                } else {
+                    alert('❌ Помилка: ' + data.error);
+                }
+            } catch(e) { console.error(e); }
+        }
 
         async function resetDatabase() {
             if (!confirm('⚠️ ВИ ДІЙСНО ХОЧЕТЕ СКИНУТИ ВСЮ БАЗУ ДАНИХ?\\nЦю дію НЕ МОЖНА скасувати!')) return;
             if (!confirm('ЩЕ РАЗ ПІДТВЕРДІТЬ: ВСІ ДАНІ БУДУТЬ ВИДАЛЕНІ!')) return;
-
             try {
                 const resp = await fetch('/api/reset-database', { method: 'POST' });
                 const data = await resp.json();
@@ -635,108 +630,77 @@ HTML_PAGE = """
                 }
             } catch(e) { console.error(e); }
         }
-        
-        let heatmapChart = null;
 
-async function loadHeatmap() {
-    const days = document.getElementById('heatmap-days').value;
-    try {
-        const resp = await fetch(`/api/heatmap?days=${days}`);
-        const data = await resp.json();
-        
-        const colorscale = [
-            [0, '#90be6d'],      // зелений - низький прибуток
-            [0.33, '#f9c74f'],   // жовтий - середній
-            [0.66, '#f9844a'],   // оранжевий - високий
-            [1, '#f44336']       // червоний - дуже високий
-        ];
-        
-        const trace = {
-            z: data.data,
-            x: data.hours,
-            y: data.days,
-            type: 'heatmap',
-            colorscale: colorscale,
-            showscale: true,
-            text: data.data.map(row => row.map(val => val > 0 ? `${val.toFixed(0)} грн` : '')),
-            texttemplate: '%{text}',
-            textfont: { size: 10 },
-            hovertemplate: '<b>%{y}</b> %{x}:00<br>' +
-                          'Середній прибуток: <b>%{z:.0f} грн</b><br>' +
-                          '<extra></extra>'
-        };
-        
-        const layout = {
-            title: {
-                text: `Середній прибуток по годинах (останні ${days} днів)`,
-                font: { size: 14 }
-            },
-            xaxis: {
-                title: 'Година дня',
-                tickmode: 'linear',
-                tick0: 0,
-                dtick: 2,
-                tickangle: 0
-            },
-            yaxis: {
-                title: 'День тижня',
-                autorange: 'reversed'
-            },
-            height: 350,
-            margin: { l: 60, r: 40, t: 50, b: 40 }
-        };
-        
-        if (heatmapChart) {
-            Plotly.react('heatmap-chart', [trace], layout);
-        } else {
-            heatmapChart = Plotly.newPlot('heatmap-chart', [trace], layout);
+        async function loadHeatmap() {
+            const days = document.getElementById('heatmap-days').value;
+            try {
+                const resp = await fetch(`/api/heatmap?days=${days}`);
+                const data = await resp.json();
+
+                const colorscale = [
+                    [0, '#90be6d'],
+                    [0.33, '#f9c74f'],
+                    [0.66, '#f9844a'],
+                    [1, '#f44336']
+                ];
+
+                const trace = {
+                    z: data.data,
+                    x: data.hours,
+                    y: data.days,
+                    type: 'heatmap',
+                    colorscale: colorscale,
+                    showscale: true,
+                    text: data.data.map(row => row.map(val => val > 0 ? `${val.toFixed(0)} грн` : '')),
+                    texttemplate: '%{text}',
+                    textfont: { size: 10 },
+                    hovertemplate: '<b>%{y}</b> %{x}:00<br>Середній прибуток: <b>%{z:.0f} грн</b><br><extra></extra>'
+                };
+
+                const layout = {
+                    title: { text: `Середній прибуток по годинах (останні ${days} днів)`, font: { size: 14 } },
+                    xaxis: { title: 'Година дня', tickmode: 'linear', tick0: 0, dtick: 2, tickangle: 0 },
+                    yaxis: { title: 'День тижня', autorange: 'reversed' },
+                    height: 350,
+                    margin: { l: 60, r: 40, t: 50, b: 40 }
+                };
+
+                if (heatmapChart) {
+                    Plotly.react('heatmap-chart', [trace], layout);
+                } else {
+                    heatmapChart = Plotly.newPlot('heatmap-chart', [trace], layout);
+                }
+
+                updateHeatmapStats(data);
+            } catch(e) { console.error(e); }
         }
-        
-        // Додаємо додаткову інформацію
-        updateHeatmapStats(data);
-        
-    } catch(e) { console.error(e); }
-}
 
-function updateHeatmapStats(data) {
-    // Знаходимо найкращий час для торгівлі
-    let bestProfit = 0;
-    let bestDay = '', bestHour = 0;
-    
-    for (let d = 0; d < data.days.length; d++) {
-        for (let h = 0; h < data.hours.length; h++) {
-            if (data.data[d][h] > bestProfit) {
-                bestProfit = data.data[d][h];
-                bestDay = data.days[d];
-                bestHour = h;
+        function updateHeatmapStats(data) {
+            let bestProfit = 0;
+            let bestDay = '', bestHour = 0;
+            for (let d = 0; d < data.days.length; d++) {
+                for (let h = 0; h < data.hours.length; h++) {
+                    if (data.data[d][h] > bestProfit) {
+                        bestProfit = data.data[d][h];
+                        bestDay = data.days[d];
+                        bestHour = h;
+                    }
+                }
             }
+            let statsDiv = document.getElementById('heatmap-stats');
+            if (!statsDiv) {
+                statsDiv = document.createElement('div');
+                statsDiv.id = 'heatmap-stats';
+                statsDiv.style.cssText = 'margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 10px; text-align: center;';
+                document.querySelector('.heatmap-legend').after(statsDiv);
+            }
+            statsDiv.innerHTML = `<strong>📈 Найкращий час для арбітражу:</strong> ${bestDay} ${bestHour}:00 (середній прибуток ${bestProfit.toFixed(0)} грн за угоду)`;
         }
-    }
-    
-    // Додаємо підказку на сторінку
-    let statsDiv = document.getElementById('heatmap-stats');
-    if (!statsDiv) {
-        statsDiv = document.createElement('div');
-        statsDiv.id = 'heatmap-stats';
-        statsDiv.style.cssText = 'margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 10px; text-align: center;';
-        document.querySelector('.heatmap-legend').after(statsDiv);
-    }
-    
-    statsDiv.innerHTML = `
-        <strong>📈 Найкращий час для арбітражу:</strong> 
-        ${bestDay} ${bestHour}:00 (середній прибуток ${bestProfit.toFixed(0)} грн за угоду)
-    `;
-}
 
         async function confirmOpportunity(id, buyAmount, sellAmount, profit, buyMerchant, sellMerchant) {
             if (!confirm(`Підтвердити виконання можливості #${id}?\\nПрибуток: +${profit} UAH\\nВід: ${buyMerchant} → ${sellMerchant}`)) return;
-
             try {
-                const resp = await fetch(`/api/opportunities/${id}/confirm`, { 
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ buy_amount: buyAmount, sell_amount: sellAmount })
-                });
+                const resp = await fetch(`/api/opportunities/${id}/confirm`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ buy_amount: buyAmount, sell_amount: sellAmount }) });
                 const data = await resp.json();
                 if (data.success) {
                     alert('✅ Можливість підтверджено! Ліміт НБУ зарезервовано.');
@@ -749,7 +713,6 @@ function updateHeatmapStats(data) {
 
         async function rejectOpportunity(id) {
             if (!confirm(`Відхилити можливість #${id}?`)) return;
-
             try {
                 const resp = await fetch(`/api/opportunities/${id}/reject`, { method: 'POST' });
                 const data = await resp.json();
@@ -763,107 +726,78 @@ function updateHeatmapStats(data) {
         }
 
         async function loadNBULimit() {
-    try {
-        const resp = await fetch('/api/nbu/limit');
-        const data = await resp.json();
-        
-        const nbuUsed = document.getElementById('nbu-used');
-        const nbuTotal = document.getElementById('nbu-total');
-        const nbuProgress = document.getElementById('nbu-progress');
-        const nbuPercent = document.getElementById('nbu-percent');
-        const nbuWarning = document.getElementById('nbu-warning');
-        
-        if (nbuUsed) nbuUsed.textContent = formatNumber(data.used_amount, 0);
-        if (nbuTotal) nbuTotal.textContent = formatNumber(data.total_limit, 0);
-        
-        const percent = data.usage_percent;
-        if (nbuProgress) nbuProgress.style.width = `${percent}%`;
-        if (nbuPercent) nbuPercent.textContent = `${percent.toFixed(1)}%`;
-        
-        if (nbuWarning) {
-            if (percent > 85) {
-                nbuWarning.style.display = 'block';
-            } else {
-                nbuWarning.style.display = 'none';
-            }
+            try {
+                const resp = await fetch('/api/nbu/limit');
+                const data = await resp.json();
+                const nbuUsed = document.getElementById('nbu-used');
+                const nbuTotal = document.getElementById('nbu-total');
+                const nbuProgress = document.getElementById('nbu-progress');
+                const nbuPercent = document.getElementById('nbu-percent');
+                const nbuWarning = document.getElementById('nbu-warning');
+                if (nbuUsed) nbuUsed.textContent = formatNumber(data.used_amount, 0);
+                if (nbuTotal) nbuTotal.textContent = formatNumber(data.total_limit, 0);
+                const percent = data.usage_percent;
+                if (nbuProgress) nbuProgress.style.width = `${percent}%`;
+                if (nbuPercent) nbuPercent.textContent = `${percent.toFixed(1)}%`;
+                if (nbuWarning) nbuWarning.style.display = percent > 85 ? 'block' : 'none';
+            } catch(e) { console.error(e); }
         }
-    } catch(e) { console.error(e); }
-}
 
         async function loadCompletedDeals() {
-    try {
-        const resp = await fetch('/api/completed-deals');
-        const deals = await resp.json();
-        const tbody = document.getElementById('transactions-body');
-        
-        // Перевірка чи елемент існує
-        if (!tbody) {
-            console.error('Element transactions-body not found');
-            return;
+            try {
+                const resp = await fetch('/api/completed-deals');
+                const deals = await resp.json();
+                const tbody = document.getElementById('completed-deals-body');
+                if (!tbody) {
+                    console.error('Element completed-deals-body not found');
+                    return;
+                }
+                if (!deals || deals.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="loading">📭 Немає виконаних угод</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = deals.map(t => {
+                    let statusClass = '', statusText = '';
+                    if (t.status === 'pending') { statusClass = 'status-pending'; statusText = 'Очікує'; }
+                    else if (t.status === 'completed') { statusClass = 'status-completed'; statusText = 'Виконано'; }
+                    else { statusClass = 'status-cancelled'; statusText = 'Скасовано'; }
+                    return `<tr>
+                        <td>${t.id}</td>
+                        <td>${new Date(t.timestamp).toLocaleString('uk-UA')}</td>
+                        <td>${formatNumber(t.amount_uah, 0)}</td>
+                        <td>${formatNumber(t.amount_usdt, 0)}</td>
+                        <td class="profit-positive">${formatProfit(t.profit)}</td>
+                        <td>${t.buy_merchant}</td>
+                        <td>${t.sell_merchant}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    </tr>`;
+                }).join('');
+            } catch(e) { console.error(e); }
         }
-        
-        if (!deals || deals.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="loading">📭 Немає активних угод</td></tr>';
-            return;
-        }
-        tbody.innerHTML = deals.map(t => {
-            let statusClass = '';
-            let statusText = '';
-            let actions = '';
-            if (t.status === 'pending') {
-                statusClass = 'status-pending';
-                statusText = 'Очікує';
-                actions = `<button class="btn-success" onclick="completeDeal(${t.id})">✅ Виконано</button>
-                           <button class="btn-danger" onclick="cancelDeal(${t.id})">❌ Скасувати</button>`;
-            } else if (t.status === 'completed') {
-                statusClass = 'status-completed';
-                statusText = 'Виконано';
-                actions = '-';
-            } else {
-                statusClass = 'status-cancelled';
-                statusText = 'Скасовано';
-                actions = '-';
-            }
-            return `<tr>
-                <td>${t.id}</td>
-                <td>${new Date(t.timestamp).toLocaleString('uk-UA')}</td>
-                <td>${formatNumber(t.amount_uah, 0)}</td>
-                <td>${formatNumber(t.amount_usdt, 0)}</td>
-                <td class="profit-positive">${formatProfit(t.profit)}</td>
-                <td>${t.buy_merchant}</td>
-                <td>${t.sell_merchant}</td>
-                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                <td>${actions}</td>
-            </tr>`;
-        }).join('');
-    } catch(e) { console.error(e); }
-}
 
         async function loadLogs() {
-    try {
-        const resp = await fetch('/api/logs');
-        const logs = await resp.json();
-        const tbody = document.getElementById('logs-body');
-        
-        if (!tbody) {
-            console.error('Element logs-body not found');
-            return;
+            try {
+                const resp = await fetch('/api/logs');
+                const logs = await resp.json();
+                const tbody = document.getElementById('logs-body');
+                if (!tbody) {
+                    console.error('Element logs-body not found');
+                    return;
+                }
+                if (!logs || logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="loading">📭 Немає логів</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = logs.map(log => {
+                    let levelClass = `log-${log.level.toLowerCase()}`;
+                    return `<tr>
+                        <td>${new Date(log.timestamp).toLocaleString('uk-UA')}</td>
+                        <td class="${levelClass}">${log.level.toUpperCase()}</td>
+                        <td>${log.message}</td>
+                    </tr>`;
+                }).join('');
+            } catch(e) { console.error(e); }
         }
-        
-        if (!logs || logs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" class="loading">📭 Немає логів</td></tr>';
-            return;
-        }
-        tbody.innerHTML = logs.map(log => {
-            let levelClass = `log-${log.level.toLowerCase()}`;
-            return `<tr>
-                <td>${new Date(log.timestamp).toLocaleString('uk-UA')}</td>
-                <td class="${levelClass}">${log.level.toUpperCase()}</td>
-                <td>${log.message}</td>
-            </tr>`;
-        }).join('');
-    } catch(e) { console.error(e); }
-}
 
         function updateTable(opps) {
             const tbody = document.getElementById('opportunities-body');
@@ -933,14 +867,14 @@ function updateHeatmapStats(data) {
             } catch(e) { console.error(e); }
         }
 
-        function refreshData() { fetchData(); loadNBULimit(); loadCompletedDeals(); loadLogs(); loadHeatmap();}
+        function refreshData() { fetchData(); loadNBULimit(); loadCompletedDeals(); loadLogs(); loadHeatmap(); }
 
         function connectWebSocket() {
             const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${location.host}/ws`;  // Це автоматично візьме порт з адресної стрі
+            const wsUrl = `${protocol}//${location.host}/ws`;
             ws = new WebSocket(wsUrl);
             ws.onopen = () => { console.log('WebSocket connected'); document.getElementById('status-text').textContent = 'Live режим'; };
-            ws.onmessage = (e) => { const data = JSON.parse(e.data); if(data.type === 'update') { updateTable(data.opportunities); updateCharts(data.opportunities); updateStats(data.opportunities); updateMarket(data.opportunities); loadNBULimit(); loadCompletedDeals(); loadLogs(); loadHeatmap();} };
+            ws.onmessage = (e) => { const data = JSON.parse(e.data); if(data.type === 'update') { updateTable(data.opportunities); updateCharts(data.opportunities); updateStats(data.opportunities); updateMarket(data.opportunities); loadNBULimit(); loadCompletedDeals(); loadLogs(); loadHeatmap(); } };
             ws.onclose = () => { console.log('WebSocket disconnected'); setTimeout(connectWebSocket, 5000); };
         }
 
@@ -948,8 +882,7 @@ function updateHeatmapStats(data) {
         loadNBULimit();
         loadCompletedDeals();
         loadLogs();
-        loadHeatmap();  
-        
+        loadHeatmap();
         connectWebSocket();
         setInterval(() => { if(!ws || ws.readyState !== WebSocket.OPEN) { fetchData(); loadNBULimit(); loadCompletedDeals(); loadLogs(); } }, 30000);
     </script>
@@ -1027,7 +960,6 @@ async def confirm_opportunity(opp_id: int):
 
         amount_uah = opp.usdt_amount * opp.buy_price
         if limit.used_amount + amount_uah > limit.total_limit:
-
             return {"success": False,
                     "error": f"NBU limit exceeded! Need {amount_uah:,.0f}, available {limit.total_limit - limit.used_amount:,.0f}"}
 
@@ -1052,11 +984,6 @@ async def confirm_opportunity(opp_id: int):
         opp.alert_sent = True
 
         session.commit()
-
-        # Додаємо лог
-        add_log(session, "SUCCESS",
-                f"Opportunity #{opp_id} confirmed! Transaction #{transaction.id} created. Reserved {amount_uah:,.0f} UAH from NBU limit")
-
         return {"success": True, "transaction_id": transaction.id}
     except Exception as e:
         session.rollback()
@@ -1064,26 +991,6 @@ async def confirm_opportunity(opp_id: int):
     finally:
         session.close()
 
-
-@app.get("/api/best-hours")
-async def get_best_hours(days: int = 30):
-    """Отримати найкращі години для торгівлі"""
-    data = db.get_heatmap_data(days=days)
-
-    # Знаходимо топ-5 годин
-    best_hours = []
-    for d in range(7):
-        for h in range(24):
-            if data['data'][d][h] > 0:
-                best_hours.append({
-                    'day': data['days'][d],
-                    'hour': h,
-                    'profit': data['data'][d][h],
-                    'count': data['counts'][d][h]
-                })
-
-    best_hours.sort(key=lambda x: x['profit'], reverse=True)
-    return best_hours[:10]
 
 @app.post("/api/opportunities/{opp_id}/reject")
 async def reject_opportunity(opp_id: int):
@@ -1101,11 +1008,8 @@ async def reject_opportunity(opp_id: int):
         if not opp:
             return {"success": False, "error": "Opportunity not found"}
 
-        opp.alert_sent = True  # Позначаємо як опрацьовану (відхилену)
+        opp.alert_sent = True
         session.commit()
-
-        add_log(session, "WARNING", f"Opportunity #{opp_id} rejected")
-
         return {"success": True}
     except Exception as e:
         session.rollback()
@@ -1165,11 +1069,14 @@ async def get_logs(limit: int = 200):
             }
             for log in logs
         ]
-    except Exception as e:
-        print(f"Error getting logs: {e}")
-        return []
     finally:
         session.close()
+
+
+@app.get("/api/heatmap")
+async def get_heatmap(days: int = 30):
+    """API для отримання даних теплової карти"""
+    return db.get_heatmap_data(days=days)
 
 
 @app.post("/api/reset-nbu-limit")
@@ -1181,90 +1088,56 @@ async def reset_nbu_limit():
     from config.settings import settings
     from datetime import datetime
 
+    engine = create_engine(settings.DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
     try:
-        engine = create_engine(settings.DATABASE_URL)
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        try:
-            current_month = datetime.now().strftime('%Y-%m')
-            limit = session.query(NBULimit).filter(NBULimit.month == current_month).first()
-
-            if limit:
-                limit.used_amount = 0
-                limit.updated_at = datetime.now()
-            else:
-                limit = NBULimit(
-                    total_limit=settings.NBU_MONTHLY_LIMIT,
-                    used_amount=0,
-                    month=current_month
-                )
-                session.add(limit)
-
-            session.commit()
-
-            # Додаємо лог
-            from app.database.db_manager import DatabaseManager
-            db = DatabaseManager()
-            db.add_log("INFO", "NBU limit reset by user")
-
-            return {"success": True}
-        finally:
-            session.close()
+        current_month = datetime.now().strftime('%Y-%m')
+        limit = session.query(NBULimit).filter(NBULimit.month == current_month).first()
+        if limit:
+            limit.used_amount = 0
+            limit.updated_at = datetime.now()
+        else:
+            limit = NBULimit(total_limit=settings.NBU_MONTHLY_LIMIT, used_amount=0, month=current_month)
+            session.add(limit)
+        session.commit()
+        return {"success": True}
     except Exception as e:
         return {"success": False, "error": str(e)}
+    finally:
+        session.close()
+
 
 @app.post("/api/reset-database")
 async def reset_database():
     """Скинути базу даних (очистити всі таблиці)"""
     from sqlalchemy import create_engine, text
-    from app.database.models import Base as ModelsBase
-    from app.nbu.limits import Base as NBUBase
     from config.settings import settings
 
     try:
         engine = create_engine(settings.DATABASE_URL)
-
-        # Очищаємо ВСІ таблиці через SQL (швидший спосіб)
         with engine.connect() as conn:
-            # Отримуємо список всіх таблиць
-            if 'sqlite' in settings.DATABASE_URL:
-                # Для SQLite
-                conn.execute(text("DELETE FROM opportunities"))
-                conn.execute(text("DELETE FROM p2p_quotes"))
-                conn.execute(text("DELETE FROM logs"))
-                conn.execute(text("DELETE FROM nbu_limits"))
-                conn.execute(text("DELETE FROM transactions"))
-                # Скидаємо автоінкремент
-                conn.execute(text("DELETE FROM sqlite_sequence"))
-            else:
-                # Для PostgreSQL
-                conn.execute(text(
-                    "TRUNCATE TABLE opportunities, p2p_quotes, logs, nbu_limits, transactions RESTART IDENTITY CASCADE"))
+            conn.execute(text("DELETE FROM opportunities"))
+            conn.execute(text("DELETE FROM p2p_quotes"))
+            conn.execute(text("DELETE FROM logs"))
+            conn.execute(text("DELETE FROM nbu_limits"))
+            conn.execute(text("DELETE FROM transactions"))
+            conn.execute(text("DELETE FROM sqlite_sequence"))
             conn.commit()
 
-        # Створюємо новий ліміт НБУ на поточний місяць
+        # Створюємо новий ліміт
         from app.nbu.limits import NBULimit
         from datetime import datetime
         from sqlalchemy.orm import sessionmaker
-
         Session = sessionmaker(bind=engine)
         session = Session()
         try:
             current_month = datetime.now().strftime('%Y-%m')
-            new_limit = NBULimit(
-                total_limit=settings.NBU_MONTHLY_LIMIT,
-                used_amount=0,
-                month=current_month
-            )
+            new_limit = NBULimit(total_limit=settings.NBU_MONTHLY_LIMIT, used_amount=0, month=current_month)
             session.add(new_limit)
             session.commit()
         finally:
             session.close()
-
-        # Додаємо лог про скидання
-        from app.database.db_manager import DatabaseManager
-        db = DatabaseManager()
-        db.add_log("INFO", "Database reset by user - all limits cleared")
 
         return {"success": True}
     except Exception as e:
@@ -1281,18 +1154,6 @@ async def get_nbu_limit():
         "usage_percent": nbu.get_usage_percent()
     }
 
-
-def add_log(session, level: str, message: str):
-    """Додати запис логу"""
-    from app.database.models import Log
-    log = Log(level=level, message=message)
-    session.add(log)
-    session.commit()
-
-@app.get("/api/heatmap")
-async def get_heatmap(days: int = 30):
-    """API для отримання даних теплової карти"""
-    return db.get_heatmap_data(days=days)
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

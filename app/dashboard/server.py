@@ -763,53 +763,93 @@ function updateHeatmapStats(data) {
         }
 
         async function loadNBULimit() {
-            try {
-                const resp = await fetch('/api/nbu/limit');
-                const data = await resp.json();
-                document.getElementById('nbu-used').textContent = formatNumber(data.used_amount, 0);
-                document.getElementById('nbu-total').textContent = formatNumber(data.total_limit, 0);
-                const percent = data.usage_percent;
-                document.getElementById('nbu-progress').style.width = `${percent}%`;
-                document.getElementById('nbu-percent').textContent = `${percent.toFixed(1)}%`;
-                if (percent > 85) {
-                    document.getElementById('nbu-warning').style.display = 'block';
-                } else {
-                    document.getElementById('nbu-warning').style.display = 'none';
-                }
-            } catch(e) { console.error(e); }
+    try {
+        const resp = await fetch('/api/nbu/limit');
+        const data = await resp.json();
+        
+        const nbuUsed = document.getElementById('nbu-used');
+        const nbuTotal = document.getElementById('nbu-total');
+        const nbuProgress = document.getElementById('nbu-progress');
+        const nbuPercent = document.getElementById('nbu-percent');
+        const nbuWarning = document.getElementById('nbu-warning');
+        
+        if (nbuUsed) nbuUsed.textContent = formatNumber(data.used_amount, 0);
+        if (nbuTotal) nbuTotal.textContent = formatNumber(data.total_limit, 0);
+        
+        const percent = data.usage_percent;
+        if (nbuProgress) nbuProgress.style.width = `${percent}%`;
+        if (nbuPercent) nbuPercent.textContent = `${percent.toFixed(1)}%`;
+        
+        if (nbuWarning) {
+            if (percent > 85) {
+                nbuWarning.style.display = 'block';
+            } else {
+                nbuWarning.style.display = 'none';
+            }
         }
+    } catch(e) { console.error(e); }
+}
 
         async function loadCompletedDeals() {
-            try {
-                const resp = await fetch('/api/completed-deals');
-                const deals = await resp.json();
-                const tbody = document.getElementById('completed-deals-body');
-                if (!deals || deals.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="loading">📭 Немає виконаних угод</td></tr>';
-                    return;
-                }
-                tbody.innerHTML = deals.map(d => {
-                    let statusClass = d.status === 'completed' ? 'status-completed' : 'status-cancelled';
-                    let statusText = d.status === 'completed' ? 'Виконано' : 'Скасовано';
-                    return `<tr>
-                        <td>${d.id}</td>
-                        <td>${new Date(d.timestamp).toLocaleString('uk-UA')}</td>
-                        <td>${formatNumber(d.amount_uah, 0)}</td>
-                        <td>${formatNumber(d.amount_usdt, 0)}</td>
-                        <td class="profit-positive">${formatProfit(d.profit)}</td>
-                        <td>${d.buy_merchant}</td>
-                        <td>${d.sell_merchant}</td>
-                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    </tr>`;
-                }).join('');
-            } catch(e) { console.error(e); }
+    try {
+        const resp = await fetch('/api/completed-deals');
+        const deals = await resp.json();
+        const tbody = document.getElementById('transactions-body');
+        
+        // Перевірка чи елемент існує
+        if (!tbody) {
+            console.error('Element transactions-body not found');
+            return;
         }
+        
+        if (!deals || deals.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="loading">📭 Немає активних угод</td></tr>';
+            return;
+        }
+        tbody.innerHTML = deals.map(t => {
+            let statusClass = '';
+            let statusText = '';
+            let actions = '';
+            if (t.status === 'pending') {
+                statusClass = 'status-pending';
+                statusText = 'Очікує';
+                actions = `<button class="btn-success" onclick="completeDeal(${t.id})">✅ Виконано</button>
+                           <button class="btn-danger" onclick="cancelDeal(${t.id})">❌ Скасувати</button>`;
+            } else if (t.status === 'completed') {
+                statusClass = 'status-completed';
+                statusText = 'Виконано';
+                actions = '-';
+            } else {
+                statusClass = 'status-cancelled';
+                statusText = 'Скасовано';
+                actions = '-';
+            }
+            return `<tr>
+                <td>${t.id}</td>
+                <td>${new Date(t.timestamp).toLocaleString('uk-UA')}</td>
+                <td>${formatNumber(t.amount_uah, 0)}</td>
+                <td>${formatNumber(t.amount_usdt, 0)}</td>
+                <td class="profit-positive">${formatProfit(t.profit)}</td>
+                <td>${t.buy_merchant}</td>
+                <td>${t.sell_merchant}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>${actions}</td>
+            </tr>`;
+        }).join('');
+    } catch(e) { console.error(e); }
+}
 
         async function loadLogs() {
     try {
         const resp = await fetch('/api/logs');
         const logs = await resp.json();
         const tbody = document.getElementById('logs-body');
+        
+        if (!tbody) {
+            console.error('Element logs-body not found');
+            return;
+        }
+        
         if (!logs || logs.length === 0) {
             tbody.innerHTML = '<tr><td colspan="3" class="loading">📭 Немає логів</td></tr>';
             return;
@@ -897,7 +937,8 @@ function updateHeatmapStats(data) {
 
         function connectWebSocket() {
             const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            ws = new WebSocket(`${protocol}//${location.host}/ws`);
+            const wsUrl = `${protocol}//${location.host}/ws`;  // Це автоматично візьме порт з адресної стрі
+            ws = new WebSocket(wsUrl);
             ws.onopen = () => { console.log('WebSocket connected'); document.getElementById('status-text').textContent = 'Live режим'; };
             ws.onmessage = (e) => { const data = JSON.parse(e.data); if(data.type === 'update') { updateTable(data.opportunities); updateCharts(data.opportunities); updateStats(data.opportunities); updateMarket(data.opportunities); loadNBULimit(); loadCompletedDeals(); loadLogs(); loadHeatmap();} };
             ws.onclose = () => { console.log('WebSocket disconnected'); setTimeout(connectWebSocket, 5000); };

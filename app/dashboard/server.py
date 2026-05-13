@@ -553,15 +553,21 @@ HTML_PAGE = """
             <div class="chart-card">
                 <h3>📊 Теплова карта прибутку (по годинах та днях)</h3>
                 <div class="heatmap-controls">
-                    <label>Період: 
-                        <select id="heatmap-days" onchange="loadHeatmap()">
-                            <option value="7">7 днів</option>
-                            <option value="14">14 днів</option>
-                            <option value="30" selected>30 днів</option>
-                            <option value="60">60 днів</option>
-                        </select>
-                    </label>
-                </div>
+                <label>Тип угод: 
+                    <select id="heatmap-type" onchange="loadHeatmap()">
+                        <option value="all">Всі можливості</option>
+                        <option value="confirmed">Лише підтверджені</option>
+                    </select>
+                </label>
+                <label>Період: 
+                    <select id="heatmap-days" onchange="loadHeatmap()">
+                        <option value="7">7 днів</option>
+                        <option value="14">14 днів</option>
+                        <option value="30" selected>30 днів</option>
+                        <option value="60">60 днів</option>
+                    </select>
+                </label>
+            </div>
                 <div id="heatmap-chart" style="height: 400px; margin-top: 10px;"></div>
                 <div class="heatmap-legend">
                     <span>💰 Середній прибуток (грн):</span>
@@ -1156,9 +1162,9 @@ async def get_logs(limit: int = 100):
 
 
 @app.get("/api/heatmap")
-async def get_heatmap(days: int = 30):
+async def get_heatmap(days: int = 30, type: str = "all"):
     """API для отримання даних теплової карти"""
-    return db.get_heatmap_data(days=days)
+    return db.get_heatmap_data(days=days, type=type)
 
 
 @app.post("/api/reset-nbu-limit")

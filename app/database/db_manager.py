@@ -264,21 +264,22 @@ class DatabaseManager:
         session = self.Session()
         try:
             since = datetime.now() - timedelta(days=days)
+            # ВРАХОВУЄМО ВСІ МОЖЛИВОСТІ (не тільки підтверджені)
             opportunities = session.query(Opportunity).filter(
-                Opportunity.timestamp >= since,
-                Opportunity.alert_sent == True  # Тільки підтверджені угоди
+                Opportunity.timestamp >= since
+                # alert_sent може бути True або False - ВСІ
             ).all()
 
             # Підготовка даних: [день_тижня][година] = сума_прибутку
-            heatmap_data = [[0] * 24 for _ in range(7)]  # 7 днів, 24 години
+            heatmap_data = [[0] * 24 for _ in range(7)]
             counts = [[0] * 24 for _ in range(7)]
 
             days_map = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'НД']
 
             for opp in opportunities:
-                weekday = opp.timestamp.weekday()  # 0=ПН, 6=НД
+                weekday = opp.timestamp.weekday()
                 hour = opp.timestamp.hour
-                profit = opp.net_profit
+                profit = opp.net_profit  # net_profit вже розрахований
 
                 if profit > 0:
                     heatmap_data[weekday][hour] += profit
@@ -291,20 +292,16 @@ class DatabaseManager:
                     if counts[w][h] > 0:
                         avg_profit[w][h] = round(heatmap_data[w][h] / counts[w][h], 2)
 
-            # Знаходимо максимальне значення для нормалізації
-            max_profit = max(max(row) for row in avg_profit) if avg_profit else 1
-
             return {
                 'days': days_map,
                 'hours': list(range(24)),
                 'data': avg_profit,
-                'max_profit': max_profit,
                 'counts': counts
             }
         except Exception as e:
             logger.error(f"Failed to get heatmap data: {e}")
             return {'days': ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'НД'], 'hours': list(range(24)),
-                    'data': [[0] * 24 for _ in range(7)], 'max_profit': 1, 'counts': [[0] * 24 for _ in range(7)]}
+                    'data': [[0] * 24 for _ in range(7)], 'counts': [[0] * 24 for _ in range(7)]}
         finally:
             session.close()
 

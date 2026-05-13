@@ -1111,9 +1111,8 @@ async def get_pending_opportunities(limit: int = 100):
 
 @app.get("/api/completed-deals")
 async def get_completed_deals(limit: int = 100):
-    """Отримати виконані угоди"""
+    """Отримати виконані угоди (тільки ті, що були підтверджені через кнопку)"""
     from app.nbu.limits import Transaction
-    from app.database.models import Opportunity
     from sqlalchemy import create_engine, desc
     from sqlalchemy.orm import sessionmaker
     from config.settings import settings
@@ -1122,27 +1121,22 @@ async def get_completed_deals(limit: int = 100):
     Session = sessionmaker(bind=engine)
     session = Session()
     try:
-        # Отримуємо всі підтверджені можливості
-        opportunities = session.query(Opportunity).filter(
-            Opportunity.alert_sent == True,
-            Opportunity.net_profit > 0
-        ).order_by(desc(Opportunity.timestamp)).limit(limit).all()
-
+        # Беремо тільки транзакції зі статусом 'completed'
+        transactions = session.query(Transaction).filter(
+            Transaction.status == 'completed'
+        ).order_by(desc(Transaction.timestamp)).limit(limit).all()
         return [
             {
-                "id": o.id,
-                "timestamp": o.timestamp.isoformat(),
-                "spread": o.spread_percent,
-                "profit": o.net_profit,
-                "roi": o.roi_percent,
-                "buy_price": o.buy_price,
-                "sell_price": o.sell_price,
-                "usdt_amount": o.usdt_amount,
-                "buy_merchant": o.buy_merchant,
-                "sell_merchant": o.sell_merchant,
-                "status": "completed"
+                "id": t.id,
+                "timestamp": t.timestamp.isoformat(),
+                "amount_uah": t.amount_uah,
+                "amount_usdt": t.amount_usdt,
+                "profit": t.profit,
+                "buy_merchant": t.buy_merchant,
+                "sell_merchant": t.sell_merchant,
+                "status": t.status
             }
-            for o in opportunities
+            for t in transactions
         ]
     finally:
         session.close()
@@ -1160,12 +1154,25 @@ async def get_rejected_deals(limit: int = 100):
     Session = sessionmaker(bind=engine)
     session = Session()
     try:
-        # Відхилені - це ті, що мають alert_sent = True, але не стали транзакціями
-        # і мають net_profit > 0
-        opportunities = session.query(Opportunity).filter(
-            Opportunity.alert_sent == True,
-            Opportunity.net_profit > 0
-        ).order_by(desc(Opportunity.timestamp)).limit(limit).all()
+        # Відхилені - це можливості, які були позначені alert_sent=True,
+        # але для яких НЕ було створено транзакцію
+        # Отримуємо всі pending транзакції
+        from app.nbu.limits import Transaction
+        trans_ids = [t.id for t in session.query(Transaction.id).all()]
+
+        # Якщо немає транзакцій, показуємо всі alert_sent=True
+        if not trans_ids:
+            opportunities = session.query(Opportunity).filter(
+                Opportunity.alert_sent == True,
+                Opportunity.net_profit > 0
+            ).order_by(desc(Opportunity.timestamp)).limit(limit).all()
+        else:
+            # Показуємо тільки ті, що не пов'язані з транзакціями
+            opportunities = session.query(Opportunity).filter(
+                Opportunity.alert_sent == True,
+                Opportunity.net_profit > 0,
+                ~Opportunity.id.in_(trans_ids)
+            ).order_by(desc(Opportunity.timestamp)).limit(limit).all()
 
         return [
             {

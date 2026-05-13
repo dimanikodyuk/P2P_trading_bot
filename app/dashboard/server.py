@@ -696,70 +696,103 @@ HTML_PAGE = """
         }
 
         async function loadHeatmap() {
-            const days = document.getElementById('heatmap-days').value;
-            try {
-                const resp = await fetch(`/api/heatmap?days=${days}`);
-                const data = await resp.json();
+    const days = document.getElementById('heatmap-days').value;
+    const type = document.getElementById('heatmap-type').value;
+    try {
+        const resp = await fetch(`/api/heatmap?days=${days}&type=${type}`);
+        const data = await resp.json();
 
-                const colorscale = [
-                    [0, '#90be6d'],
-                    [0.33, '#f9c74f'],
-                    [0.66, '#f9844a'],
-                    [1, '#f44336']
-                ];
+        const colorscale = [
+            [0, '#90be6d'],
+            [0.33, '#f9c74f'],
+            [0.66, '#f9844a'],
+            [1, '#f44336']
+        ];
 
-                const trace = {
-                    z: data.data,
-                    x: data.hours,
-                    y: data.days,
-                    type: 'heatmap',
-                    colorscale: colorscale,
-                    showscale: true,
-                    text: data.data.map(row => row.map(val => val > 0 ? `${val.toFixed(0)} грн` : '')),
-                    texttemplate: '%{text}',
-                    textfont: { size: 10 },
-                    hovertemplate: '<b>%{y}</b> %{x}:00<br>Середній прибуток: <b>%{z:.0f} грн</b><br><extra></extra>'
-                };
+        const trace = {
+            z: data.data,
+            x: data.hours,
+            y: data.days,
+            type: 'heatmap',
+            colorscale: colorscale,
+            showscale: true,
+            text: data.data.map(row => row.map(() => '')),  // ← ПУСТІ ТЕКСТИ
+            textfont: { size: 10 },
+            hovertemplate: '<b>%{y}</b> %{x}:00<br>Середній прибуток: <b>%{z:.0f} грн</b><br>Кількість угод: <b>%{text}</b><extra></extra>',
+            texttemplate: '%{text}'
+        };
 
-                const layout = {
-                    title: { text: `Середній прибуток по годинах (останні ${days} днів)`, font: { size: 14 } },
-                    xaxis: { title: 'Година дня', tickmode: 'linear', tick0: 0, dtick: 2, tickangle: 0 },
-                    yaxis: { title: 'День тижня', autorange: 'reversed' },
-                    height: 350,
-                    margin: { l: 60, r: 40, t: 50, b: 40 }
-                };
+        // Додаємо кількість угод в hover
+        const counts = data.counts;
+        
+        const layout = {
+            title: { 
+                text: `Середній прибуток по годинах (останні ${days} днів)`, 
+                font: { size: 14 } 
+            },
+            xaxis: { 
+                title: 'Година дня', 
+                tickmode: 'linear', 
+                tick0: 0, 
+                dtick: 2, 
+                tickangle: 0 
+            },
+            yaxis: { 
+                title: 'День тижня', 
+                autorange: 'reversed' 
+            },
+            height: 350,
+            margin: { l: 60, r: 40, t: 50, b: 40 },
+            hoverlabel: {
+                bgcolor: 'white',
+                font: { size: 12, color: '#333' }
+            }
+        };
 
-                if (heatmapChart) {
-                    Plotly.react('heatmap-chart', [trace], layout);
-                } else {
-                    heatmapChart = Plotly.newPlot('heatmap-chart', [trace], layout);
-                }
-
-                updateHeatmapStats(data);
-            } catch(e) { console.error(e); }
+        if (heatmapChart) {
+            Plotly.react('heatmap-chart', [trace], layout);
+        } else {
+            heatmapChart = Plotly.newPlot('heatmap-chart', [trace], layout);
         }
 
-        function updateHeatmapStats(data) {
-            let bestProfit = 0;
-            let bestDay = '', bestHour = 0;
-            for (let d = 0; d < data.days.length; d++) {
-                for (let h = 0; h < data.hours.length; h++) {
-                    if (data.data[d][h] > bestProfit) {
-                        bestProfit = data.data[d][h];
-                        bestDay = data.days[d];
-                        bestHour = h;
-                    }
-                }
+        updateHeatmapStats(data, counts);
+    } catch(e) { console.error(e); }
+}
+
+         updateHeatmapStats(data, counts);
+    } catch(e) { console.error(e); }
+}
+
+function updateHeatmapStats(data, counts) {
+    let bestProfit = 0;
+    let bestDay = '', bestHour = 0;
+    let bestCount = 0;
+    
+    for (let d = 0; d < data.days.length; d++) {
+        for (let h = 0; h < data.hours.length; h++) {
+            if (data.data[d][h] > bestProfit) {
+                bestProfit = data.data[d][h];
+                bestDay = data.days[d];
+                bestHour = h;
+                bestCount = counts ? counts[d][h] : 0;
             }
-            let statsDiv = document.getElementById('heatmap-stats');
-            if (!statsDiv) {
-                statsDiv = document.createElement('div');
-                statsDiv.id = 'heatmap-stats';
-                statsDiv.style.cssText = 'margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 10px; text-align: center;';
-                document.querySelector('.heatmap-legend').after(statsDiv);
-            }
-            statsDiv.innerHTML = `<strong>📈 Найкращий час для арбітражу:</strong> ${bestDay} ${bestHour}:00 (середній прибуток ${bestProfit.toFixed(0)} грн за угоду)`;
         }
+    }
+    
+    let statsDiv = document.getElementById('heatmap-stats');
+    if (!statsDiv) {
+        statsDiv = document.createElement('div');
+        statsDiv.id = 'heatmap-stats';
+        statsDiv.style.cssText = 'margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 10px; text-align: center;';
+        document.querySelector('.heatmap-legend').after(statsDiv);
+    }
+    
+    if (bestProfit > 0) {
+        statsDiv.innerHTML = `<strong>📈 Найкращий час для арбітражу:</strong> ${bestDay} ${bestHour}:00 (середній прибуток ${bestProfit.toFixed(0)} грн за угоду, всього угод: ${bestCount})`;
+    } else {
+        statsDiv.innerHTML = `<strong>📈 Немає даних за вибраний період</strong>`;
+    }
+}
 
         async function confirmOpportunity(id, buyAmount, sellAmount, profit, buyMerchant, sellMerchant) {
             if (!confirm(`Підтвердити виконання можливості #${id}?\\nПрибуток: +${profit} UAH\\nВід: ${buyMerchant} → ${sellMerchant}`)) return;

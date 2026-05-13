@@ -259,6 +259,55 @@ class DatabaseManager:
         finally:
             session.close()
 
+    def get_heatmap_data(self, days: int = 30) -> Dict:
+        """Отримати дані для теплової карти прибутку по годинах та днях"""
+        session = self.Session()
+        try:
+            since = datetime.now() - timedelta(days=days)
+            opportunities = session.query(Opportunity).filter(
+                Opportunity.timestamp >= since,
+                Opportunity.alert_sent == True  # Тільки підтверджені угоди
+            ).all()
+
+            # Підготовка даних: [день_тижня][година] = сума_прибутку
+            heatmap_data = [[0] * 24 for _ in range(7)]  # 7 днів, 24 години
+            counts = [[0] * 24 for _ in range(7)]
+
+            days_map = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'НД']
+
+            for opp in opportunities:
+                weekday = opp.timestamp.weekday()  # 0=ПН, 6=НД
+                hour = opp.timestamp.hour
+                profit = opp.net_profit
+
+                if profit > 0:
+                    heatmap_data[weekday][hour] += profit
+                    counts[weekday][hour] += 1
+
+            # Розраховуємо середній прибуток
+            avg_profit = [[0] * 24 for _ in range(7)]
+            for w in range(7):
+                for h in range(24):
+                    if counts[w][h] > 0:
+                        avg_profit[w][h] = round(heatmap_data[w][h] / counts[w][h], 2)
+
+            # Знаходимо максимальне значення для нормалізації
+            max_profit = max(max(row) for row in avg_profit) if avg_profit else 1
+
+            return {
+                'days': days_map,
+                'hours': list(range(24)),
+                'data': avg_profit,
+                'max_profit': max_profit,
+                'counts': counts
+            }
+        except Exception as e:
+            logger.error(f"Failed to get heatmap data: {e}")
+            return {'days': ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'НД'], 'hours': list(range(24)),
+                    'data': [[0] * 24 for _ in range(7)], 'max_profit': 1, 'counts': [[0] * 24 for _ in range(7)]}
+        finally:
+            session.close()
+
     def get_logs(self, limit: int = 200) -> List[Dict]:
         """Get recent logs"""
         session = self.Session()

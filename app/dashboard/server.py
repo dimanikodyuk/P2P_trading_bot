@@ -149,6 +149,37 @@ HTML_PAGE = """
         .refresh-btn:hover, .reset-btn:hover {
             opacity: 0.9;
         }
+        
+        .heatmap-controls {
+            margin-bottom: 15px;
+        }
+        
+        .heatmap-controls select {
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        .legend-gradient {
+            display: inline-block;
+            width: 200px;
+            height: 20px;
+            margin: 0 10px;
+            background: linear-gradient(90deg, #90be6d, #f9c74f, #f9844a, #f44336);
+            border-radius: 10px;
+        }
+        
+        .heatmap-legend {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #666;
+        }
 
         #last-update {
             color: #666;
@@ -491,7 +522,28 @@ HTML_PAGE = """
                 <h3>💰 Прибуток за угодами</h3>
                 <div id="profit-chart" style="height: 400px;"></div>
             </div>
+            <div class="chart-card">
+                <h3>📊 Теплова карта прибутку (по годинах та днях)</h3>
+                <div class="heatmap-controls">
+                    <label>Період: 
+                        <select id="heatmap-days" onchange="loadHeatmap()">
+                            <option value="7">7 днів</option>
+                            <option value="14">14 днів</option>
+                            <option value="30" selected>30 днів</option>
+                            <option value="60">60 днів</option>
+                        </select>
+                    </label>
+                </div>
+                <div id="heatmap-chart" style="height: 400px; margin-top: 10px;"></div>
+                <div class="heatmap-legend">
+                    <span>💰 Середній прибуток (грн):</span>
+                    <div class="legend-gradient"></div>
+                    <span>Низький → Високий</span>
+                </div>
+            </div>
         </div>
+        
+        
 
         <div class="opportunities-section">
             <h2>🔔 Останні можливості (очікують підтвердження)</h2>
@@ -583,6 +635,98 @@ HTML_PAGE = """
                 }
             } catch(e) { console.error(e); }
         }
+        
+        let heatmapChart = null;
+
+async function loadHeatmap() {
+    const days = document.getElementById('heatmap-days').value;
+    try {
+        const resp = await fetch(`/api/heatmap?days=${days}`);
+        const data = await resp.json();
+        
+        const colorscale = [
+            [0, '#90be6d'],      // зелений - низький прибуток
+            [0.33, '#f9c74f'],   // жовтий - середній
+            [0.66, '#f9844a'],   // оранжевий - високий
+            [1, '#f44336']       // червоний - дуже високий
+        ];
+        
+        const trace = {
+            z: data.data,
+            x: data.hours,
+            y: data.days,
+            type: 'heatmap',
+            colorscale: colorscale,
+            showscale: true,
+            text: data.data.map(row => row.map(val => val > 0 ? `${val.toFixed(0)} грн` : '')),
+            texttemplate: '%{text}',
+            textfont: { size: 10 },
+            hovertemplate: '<b>%{y}</b> %{x}:00<br>' +
+                          'Середній прибуток: <b>%{z:.0f} грн</b><br>' +
+                          '<extra></extra>'
+        };
+        
+        const layout = {
+            title: {
+                text: `Середній прибуток по годинах (останні ${days} днів)`,
+                font: { size: 14 }
+            },
+            xaxis: {
+                title: 'Година дня',
+                tickmode: 'linear',
+                tick0: 0,
+                dtick: 2,
+                tickangle: 0
+            },
+            yaxis: {
+                title: 'День тижня',
+                autorange: 'reversed'
+            },
+            height: 350,
+            margin: { l: 60, r: 40, t: 50, b: 40 }
+        };
+        
+        if (heatmapChart) {
+            Plotly.react('heatmap-chart', [trace], layout);
+        } else {
+            heatmapChart = Plotly.newPlot('heatmap-chart', [trace], layout);
+        }
+        
+        // Додаємо додаткову інформацію
+        updateHeatmapStats(data);
+        
+    } catch(e) { console.error(e); }
+}
+
+function updateHeatmapStats(data) {
+    // Знаходимо найкращий час для торгівлі
+    let bestProfit = 0;
+    let bestDay = '', bestHour = 0;
+    
+    for (let d = 0; d < data.days.length; d++) {
+        for (let h = 0; h < data.hours.length; h++) {
+            if (data.data[d][h] > bestProfit) {
+                bestProfit = data.data[d][h];
+                bestDay = data.days[d];
+                bestHour = h;
+            }
+        }
+    }
+    
+    // Додаємо підказку на сторінку
+    let statsDiv = document.getElementById('heatmap-stats');
+    if (!statsDiv) {
+        statsDiv = document.createElement('div');
+        statsDiv.id = 'heatmap-stats';
+        statsDiv.style.cssText = 'margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 10px; text-align: center;';
+        document.querySelector('.heatmap-legend').after(statsDiv);
+    }
+    
+    statsDiv.innerHTML = `
+        <strong>📈 Найкращий час для арбітражу:</strong> 
+        ${bestDay} ${bestHour}:00 (середній прибуток ${bestProfit.toFixed(0)} грн за угоду)
+    `;
+}
 
         async function confirmOpportunity(id, buyAmount, sellAmount, profit, buyMerchant, sellMerchant) {
             if (!confirm(`Підтвердити виконання можливості #${id}?\\nПрибуток: +${profit} UAH\\nВід: ${buyMerchant} → ${sellMerchant}`)) return;
@@ -749,13 +893,13 @@ HTML_PAGE = """
             } catch(e) { console.error(e); }
         }
 
-        function refreshData() { fetchData(); loadNBULimit(); loadCompletedDeals(); loadLogs(); }
+        function refreshData() { fetchData(); loadNBULimit(); loadCompletedDeals(); loadLogs(); loadHeatmap();}
 
         function connectWebSocket() {
             const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
             ws = new WebSocket(`${protocol}//${location.host}/ws`);
             ws.onopen = () => { console.log('WebSocket connected'); document.getElementById('status-text').textContent = 'Live режим'; };
-            ws.onmessage = (e) => { const data = JSON.parse(e.data); if(data.type === 'update') { updateTable(data.opportunities); updateCharts(data.opportunities); updateStats(data.opportunities); updateMarket(data.opportunities); loadNBULimit(); loadCompletedDeals(); loadLogs(); } };
+            ws.onmessage = (e) => { const data = JSON.parse(e.data); if(data.type === 'update') { updateTable(data.opportunities); updateCharts(data.opportunities); updateStats(data.opportunities); updateMarket(data.opportunities); loadNBULimit(); loadCompletedDeals(); loadLogs(); loadHeatmap();} };
             ws.onclose = () => { console.log('WebSocket disconnected'); setTimeout(connectWebSocket, 5000); };
         }
 
@@ -763,6 +907,8 @@ HTML_PAGE = """
         loadNBULimit();
         loadCompletedDeals();
         loadLogs();
+        loadHeatmap();  
+        
         connectWebSocket();
         setInterval(() => { if(!ws || ws.readyState !== WebSocket.OPEN) { fetchData(); loadNBULimit(); loadCompletedDeals(); loadLogs(); } }, 30000);
     </script>
@@ -877,6 +1023,26 @@ async def confirm_opportunity(opp_id: int):
     finally:
         session.close()
 
+
+@app.get("/api/best-hours")
+async def get_best_hours(days: int = 30):
+    """Отримати найкращі години для торгівлі"""
+    data = db.get_heatmap_data(days=days)
+
+    # Знаходимо топ-5 годин
+    best_hours = []
+    for d in range(7):
+        for h in range(24):
+            if data['data'][d][h] > 0:
+                best_hours.append({
+                    'day': data['days'][d],
+                    'hour': h,
+                    'profit': data['data'][d][h],
+                    'count': data['counts'][d][h]
+                })
+
+    best_hours.sort(key=lambda x: x['profit'], reverse=True)
+    return best_hours[:10]
 
 @app.post("/api/opportunities/{opp_id}/reject")
 async def reject_opportunity(opp_id: int):
@@ -1082,6 +1248,10 @@ def add_log(session, level: str, message: str):
     session.add(log)
     session.commit()
 
+@app.get("/api/heatmap")
+async def get_heatmap(days: int = 30):
+    """API для отримання даних теплової карти"""
+    return db.get_heatmap_data(days=days)
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

@@ -878,13 +878,22 @@ HTML_PAGE = """
             ws.onclose = () => { console.log('WebSocket disconnected'); setTimeout(connectWebSocket, 5000); };
         }
 
-        fetchData();
-        loadNBULimit();
-        loadCompletedDeals();
-        loadLogs();
-        loadHeatmap();
-        connectWebSocket();
-        setInterval(() => { if(!ws || ws.readyState !== WebSocket.OPEN) { fetchData(); loadNBULimit(); loadCompletedDeals(); loadLogs(); } }, 30000);
+        // Завантажуємо всі дані
+fetchData();
+loadNBULimit();
+loadCompletedDeals();
+loadLogs();
+loadHeatmap();
+
+// Оновлюємо дані кожні 5 секунд (без WebSocket)
+setInterval(() => {
+    fetchData();
+    loadNBULimit();
+    loadCompletedDeals();
+    loadLogs();
+    loadHeatmap();
+}, 5000);
+
     </script>
 </body>
 </html>

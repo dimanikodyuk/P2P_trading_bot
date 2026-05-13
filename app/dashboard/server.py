@@ -447,14 +447,14 @@ HTML_PAGE = """
         .log-warning { color: #ff9800; }
         .log-error { color: #f44336; }
 
-        .logs-controls {
+        .controls {
             display: flex;
             justify-content: flex-end;
             margin-bottom: 15px;
             gap: 10px;
         }
 
-        .logs-controls select {
+        .controls select {
             padding: 5px 10px;
             border-radius: 5px;
             border: 1px solid #ddd;
@@ -605,14 +605,76 @@ HTML_PAGE = """
         </div>
 
         <div class="opportunities-section">
-            <h2>✅ Виконані угоди</h2>
+            <div class="opportunities-header">
+                <h2>✅ Виконані угоди</h2>
+                <div class="controls">
+                    <label>Показати: 
+                        <select id="completed-limit" onchange="loadCompletedDeals()">
+                            <option value="50">50</option>
+                            <option value="100" selected>100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
             <div class="table-container">
                 <table id="completed-deals-table">
                     <thead>
-                        <tr><th>ID</th><th>Час</th><th>Сума (UAH)</th><th>USDT</th><th>Прибуток</th><th>Продавець</th><th>Покупець</th><th>Статус</th></tr>
+                        <tr>
+                            <th>ID</th>
+                            <th>⏰ Час</th>
+                            <th>💵 Купівля</th>
+                            <th>💰 Продаж</th>
+                            <th>📈 Спред</th>
+                            <th>💸 Сума купівлі</th>
+                            <th>💵 Сума продажу</th>
+                            <th>💚 Прибуток</th>
+                            <th>📊 ROI</th>
+                            <th>👤 Продавець</th>
+                            <th>👤 Покупець</th>
+                            <th>📌 Статус</th>
+                        </tr>
                     </thead>
                     <tbody id="completed-deals-body">
-                        <tr><td colspan="8" class="loading">Завантаження...</td></tr>
+                        <tr><td colspan="12" class="loading">Завантаження...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="opportunities-section">
+            <div class="opportunities-header">
+                <h2>❌ Відхилені можливості</h2>
+                <div class="controls">
+                    <label>Показати: 
+                        <select id="rejected-limit" onchange="loadRejectedDeals()">
+                            <option value="50">50</option>
+                            <option value="100" selected>100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="rejected-deals-table">
+                    <thead>
+                        <tr>
+                            <th>⏰ Час</th>
+                            <th>💵 Купівля</th>
+                            <th>💰 Продаж</th>
+                            <th>📈 Спред</th>
+                            <th>💸 Сума купівлі</th>
+                            <th>💵 Сума продажу</th>
+                            <th>💚 Прибуток</th>
+                            <th>📊 ROI</th>
+                            <th>👤 Продавець</th>
+                            <th>👤 Покупець</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rejected-deals-body">
+                        <tr><td colspan="10" class="loading">Завантаження...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -621,7 +683,7 @@ HTML_PAGE = """
         <div class="opportunities-section">
             <div class="opportunities-header">
                 <h2>📋 Логи подій</h2>
-                <div class="logs-controls">
+                <div class="controls">
                     <label>Показати: 
                         <select id="logs-limit" onchange="loadLogs()">
                             <option value="50">50</option>
@@ -635,7 +697,11 @@ HTML_PAGE = """
             <div class="table-container">
                 <table id="logs-table">
                     <thead>
-                        <tr><th>⏰ Час</th><th>📊 Рівень</th><th>📝 Повідомлення</th></tr>
+                        <tr>
+                            <th>⏰ Час</th>
+                            <th>📊 Рівень</th>
+                            <th>📝 Повідомлення</th>
+                        </tr>
                     </thead>
                     <tbody id="logs-body">
                         <tr><td colspan="3" class="loading">Завантаження...</td></tr>
@@ -722,30 +788,13 @@ HTML_PAGE = """
                     texttemplate: '%{text}'
                 };
 
-                const counts = data.counts;
-
                 const layout = {
-                    title: { 
-                        text: `Середній прибуток по годинах (останні ${days} днів)`, 
-                        font: { size: 14 } 
-                    },
-                    xaxis: { 
-                        title: 'Година дня', 
-                        tickmode: 'linear', 
-                        tick0: 0, 
-                        dtick: 2, 
-                        tickangle: 0 
-                    },
-                    yaxis: { 
-                        title: 'День тижня', 
-                        autorange: 'reversed' 
-                    },
+                    title: { text: `Середній прибуток по годинах (останні ${days} днів)`, font: { size: 14 } },
+                    xaxis: { title: 'Година дня', tickmode: 'linear', tick0: 0, dtick: 2, tickangle: 0 },
+                    yaxis: { title: 'День тижня', autorange: 'reversed' },
                     height: 350,
                     margin: { l: 60, r: 40, t: 50, b: 40 },
-                    hoverlabel: {
-                        bgcolor: 'white',
-                        font: { size: 12, color: '#333' }
-                    }
+                    hoverlabel: { bgcolor: 'white', font: { size: 12, color: '#333' } }
                 };
 
                 if (heatmapChart) {
@@ -754,26 +803,22 @@ HTML_PAGE = """
                     heatmapChart = Plotly.newPlot('heatmap-chart', [trace], layout);
                 }
 
-                updateHeatmapStats(data, counts);
+                updateHeatmapStats(data);
             } catch(e) { console.error(e); }
         }
 
-        function updateHeatmapStats(data, counts) {
+        function updateHeatmapStats(data) {
             let bestProfit = 0;
             let bestDay = '', bestHour = 0;
-            let bestCount = 0;
-
             for (let d = 0; d < data.days.length; d++) {
                 for (let h = 0; h < data.hours.length; h++) {
                     if (data.data[d][h] > bestProfit) {
                         bestProfit = data.data[d][h];
                         bestDay = data.days[d];
                         bestHour = h;
-                        bestCount = counts ? counts[d][h] : 0;
                     }
                 }
             }
-
             let statsDiv = document.getElementById('heatmap-stats');
             if (!statsDiv) {
                 statsDiv = document.createElement('div');
@@ -781,9 +826,8 @@ HTML_PAGE = """
                 statsDiv.style.cssText = 'margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 10px; text-align: center;';
                 document.querySelector('.heatmap-legend').after(statsDiv);
             }
-
             if (bestProfit > 0) {
-                statsDiv.innerHTML = `<strong>📈 Найкращий час для арбітражу:</strong> ${bestDay} ${bestHour}:00 (середній прибуток ${bestProfit.toFixed(0)} грн за угоду, всього угод: ${bestCount})`;
+                statsDiv.innerHTML = `<strong>📈 Найкращий час для арбітражу:</strong> ${bestDay} ${bestHour}:00 (середній прибуток ${bestProfit.toFixed(0)} грн за угоду)`;
             } else {
                 statsDiv.innerHTML = `<strong>📈 Немає даних за вибраний період</strong>`;
             }
@@ -821,47 +865,72 @@ HTML_PAGE = """
             try {
                 const resp = await fetch('/api/nbu/limit');
                 const data = await resp.json();
-                const nbuUsed = document.getElementById('nbu-used');
-                const nbuTotal = document.getElementById('nbu-total');
-                const nbuProgress = document.getElementById('nbu-progress');
-                const nbuPercent = document.getElementById('nbu-percent');
-                const nbuWarning = document.getElementById('nbu-warning');
-                if (nbuUsed) nbuUsed.textContent = formatNumber(data.used_amount, 0);
-                if (nbuTotal) nbuTotal.textContent = formatNumber(data.total_limit, 0);
+                document.getElementById('nbu-used').textContent = formatNumber(data.used_amount, 0);
+                document.getElementById('nbu-total').textContent = formatNumber(data.total_limit, 0);
                 const percent = data.usage_percent;
-                if (nbuProgress) nbuProgress.style.width = `${percent}%`;
-                if (nbuPercent) nbuPercent.textContent = `${percent.toFixed(1)}%`;
-                if (nbuWarning) nbuWarning.style.display = percent > 85 ? 'block' : 'none';
+                document.getElementById('nbu-progress').style.width = `${percent}%`;
+                document.getElementById('nbu-percent').textContent = `${percent.toFixed(1)}%`;
+                document.getElementById('nbu-warning').style.display = percent > 85 ? 'block' : 'none';
             } catch(e) { console.error(e); }
         }
 
         async function loadCompletedDeals() {
+            const limit = document.getElementById('completed-limit').value;
             try {
-                const resp = await fetch('/api/completed-deals');
+                const resp = await fetch(`/api/completed-deals?limit=${limit}`);
                 const deals = await resp.json();
                 const tbody = document.getElementById('completed-deals-body');
-                if (!tbody) {
-                    console.error('Element completed-deals-body not found');
-                    return;
-                }
                 if (!deals || deals.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="loading">📭 Немає виконаних угод</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="12" class="loading">📭 Немає виконаних угод</td></tr>';
                     return;
                 }
                 tbody.innerHTML = deals.map(t => {
-                    let statusClass = '', statusText = '';
-                    if (t.status === 'pending') { statusClass = 'status-pending'; statusText = 'Очікує'; }
-                    else if (t.status === 'completed') { statusClass = 'status-completed'; statusText = 'Виконано'; }
-                    else { statusClass = 'status-cancelled'; statusText = 'Скасовано'; }
+                    let statusClass = t.status === 'completed' ? 'status-completed' : 'status-cancelled';
+                    let statusText = t.status === 'completed' ? 'Виконано' : 'Скасовано';
+                    const buyAmount = t.amount_usdt * t.buy_price;
+                    const sellAmount = t.amount_usdt * t.sell_price;
                     return `<tr>
                         <td>${t.id}</td>
                         <td>${new Date(t.timestamp).toLocaleString('uk-UA')}</td>
-                        <td>${formatNumber(t.amount_uah, 0)}</td>
-                        <td>${formatNumber(t.amount_usdt, 0)}</td>
-                        <td class="profit-positive">${formatProfit(t.profit)}</td>
+                        <td>${formatNumber(t.buy_price)} UAH</td>
+                        <td>${formatNumber(t.sell_price)} UAH</td>
+                        <td>${formatNumber(t.spread, 2)}%</td>
+                        <td class="profit-positive">${formatNumber(buyAmount, 0)} грн</td>
+                        <td class="profit-positive">${formatNumber(sellAmount, 0)} грн</td>
+                        <td class="profit-positive">${formatProfit(t.profit)} UAH</td>
+                        <td>${formatNumber(t.roi, 2)}%</td>
                         <td>${t.buy_merchant}</td>
                         <td>${t.sell_merchant}</td>
                         <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    </tr>`;
+                }).join('');
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadRejectedDeals() {
+            const limit = document.getElementById('rejected-limit').value;
+            try {
+                const resp = await fetch(`/api/rejected-deals?limit=${limit}`);
+                const deals = await resp.json();
+                const tbody = document.getElementById('rejected-deals-body');
+                if (!deals || deals.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="10" class="loading">📭 Немає відхилених угод</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = deals.map(o => {
+                    const buyAmount = o.usdt_amount ? o.usdt_amount * o.buy_price : 0;
+                    const sellAmount = o.usdt_amount ? o.usdt_amount * o.sell_price : 0;
+                    return `<tr>
+                        <td>${new Date(o.timestamp).toLocaleString('uk-UA')}</td>
+                        <td>${formatNumber(o.buy_price)} UAH</td>
+                        <td>${formatNumber(o.sell_price)} UAH</td>
+                        <td>${formatNumber(o.spread, 2)}%</td>
+                        <td class="profit-positive">${formatNumber(buyAmount, 0)} грн</td>
+                        <td class="profit-positive">${formatNumber(sellAmount, 0)} грн</td>
+                        <td class="profit-positive">${formatProfit(o.profit)} UAH</td>
+                        <td>${formatNumber(o.roi, 2)}%</td>
+                        <td>${o.buy_merchant}</td>
+                        <td>${o.sell_merchant}</td>
                     </tr>`;
                 }).join('');
             } catch(e) { console.error(e); }
@@ -873,12 +942,8 @@ HTML_PAGE = """
                 const resp = await fetch(`/api/logs?limit=${limit}`);
                 const logs = await resp.json();
                 const tbody = document.getElementById('logs-body');
-                if (!tbody) {
-                    console.error('Element logs-body not found');
-                    return;
-                }
                 if (!logs || logs.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="3" class="loading">📭 Немає логів</td></tr>';
+                    tbody.innerHTML = '</tr><td colspan="3" class="loading">📭 Немає логів</td></tr>';
                     return;
                 }
                 tbody.innerHTML = logs.map(log => {
@@ -894,9 +959,9 @@ HTML_PAGE = """
 
         function updateTable(opps) {
             const tbody = document.getElementById('opportunities-body');
-            if (!opps || opps.length === 0) { 
+            if (!opps || opps.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" class="loading">📭 Немає можливостей, що очікують підтвердження</td></tr>';
-                return; 
+                return;
             }
             tbody.innerHTML = opps.map(o => {
                 const buyAmount = o.usdt_amount ? o.usdt_amount * o.buy_price : 0;
@@ -905,11 +970,11 @@ HTML_PAGE = """
                     <td>${new Date(o.timestamp).toLocaleString('uk-UA')}</td>
                     <td>${formatNumber(o.buy_price)} UAH</td>
                     <td>${formatNumber(o.sell_price)} UAH</td>
-                    <td>${formatNumber(o.spread,2)}%</td>
+                    <td>${formatNumber(o.spread, 2)}%</td>
                     <td class="profit-positive">${formatNumber(buyAmount, 0)} грн</td>
                     <td class="profit-positive">${formatNumber(sellAmount, 0)} грн</td>
                     <td class="profit-positive">${formatProfit(o.profit)} UAH</td>
-                    <td>${formatNumber(o.roi,2)}%</td>
+                    <td>${formatNumber(o.roi, 2)}%</td>
                     <td>
                         <button class="btn-success" onclick="confirmOpportunity(${o.id}, ${buyAmount}, ${sellAmount}, ${o.profit}, '${o.buy_merchant}', '${o.sell_merchant}')">✅ Підтвердити</button>
                         <button class="btn-danger" onclick="rejectOpportunity(${o.id})">❌ Відхилити</button>
@@ -920,18 +985,31 @@ HTML_PAGE = """
 
         function updateCharts(opps) {
             if (!opps || opps.length === 0) return;
-            const rev = [...opps].reverse(), times = rev.map(o => new Date(o.timestamp).toLocaleString('uk-UA')), spreads = rev.map(o => o.spread), profits = rev.map(o => o.profit);
+            const rev = [...opps].reverse();
+            const times = rev.map(o => new Date(o.timestamp).toLocaleString('uk-UA'));
+            const spreads = rev.map(o => o.spread);
+            const profits = rev.map(o => o.profit);
+
             const spreadTrace = {x: times, y: spreads, type: 'scatter', mode: 'lines+markers', line: {color: '#ff9800', width: 2}};
-            if (spreadChart) Plotly.react('spread-chart', [spreadTrace], {title:'', xaxis:{title:'Час'}, yaxis:{title:'Спред (%)'}});
-            else spreadChart = Plotly.newPlot('spread-chart', [spreadTrace], {title:'', xaxis:{title:'Час'}, yaxis:{title:'Спред (%)'}});
+            if (spreadChart) {
+                Plotly.react('spread-chart', [spreadTrace], {title:'', xaxis:{title:'Час'}, yaxis:{title:'Спред (%)'}});
+            } else {
+                spreadChart = Plotly.newPlot('spread-chart', [spreadTrace], {title:'', xaxis:{title:'Час'}, yaxis:{title:'Спред (%)'}});
+            }
+
             const profitTrace = {x: times, y: profits, type: 'bar', marker: {color: profits.map(p => p >= 0 ? '#4caf50' : '#f44336')}};
-            if (profitChart) Plotly.react('profit-chart', [profitTrace], {title:'', xaxis:{title:'Час'}, yaxis:{title:'Прибуток (UAH)'}});
-            else profitChart = Plotly.newPlot('profit-chart', [profitTrace], {title:'', xaxis:{title:'Час'}, yaxis:{title:'Прибуток (UAH)'}});
+            if (profitChart) {
+                Plotly.react('profit-chart', [profitTrace], {title:'', xaxis:{title:'Час'}, yaxis:{title:'Прибуток (UAH)'}});
+            } else {
+                profitChart = Plotly.newPlot('profit-chart', [profitTrace], {title:'', xaxis:{title:'Час'}, yaxis:{title:'Прибуток (UAH)'}});
+            }
         }
 
         function updateStats(opps) {
             if (!opps || opps.length === 0) return;
-            const total = opps.reduce((s,o) => s + o.profit, 0), avg = total / opps.length, max = Math.max(...opps.map(o => o.profit));
+            const total = opps.reduce((s, o) => s + o.profit, 0);
+            const avg = total / opps.length;
+            const max = Math.max(...opps.map(o => o.profit));
             document.getElementById('total-profit').textContent = formatNumber(total);
             document.getElementById('avg-roi').textContent = formatNumber(avg, 2);
             document.getElementById('total-opps').textContent = opps.length;
@@ -960,20 +1038,29 @@ HTML_PAGE = """
             } catch(e) { console.error(e); }
         }
 
-        function refreshData() { fetchData(); loadNBULimit(); loadCompletedDeals(); loadLogs(); loadHeatmap(); }
+        function refreshData() {
+            fetchData();
+            loadNBULimit();
+            loadCompletedDeals();
+            loadRejectedDeals();
+            loadLogs();
+            loadHeatmap();
+        }
 
-        // Завантажуємо всі дані
+        // Ініціалізація
         fetchData();
         loadNBULimit();
         loadCompletedDeals();
+        loadRejectedDeals();
         loadLogs();
         loadHeatmap();
 
-        // Оновлюємо дані кожні 5 секунд
+        // Оновлення кожні 5 секунд
         setInterval(() => {
             fetchData();
             loadNBULimit();
             loadCompletedDeals();
+            loadRejectedDeals();
             loadLogs();
             loadHeatmap();
         }, 5000);
@@ -989,8 +1076,8 @@ async def get_dashboard():
 
 
 @app.get("/api/opportunities/pending")
-async def get_pending_opportunities():
-    """Отримати можливості, що очікують підтвердження (status='pending')"""
+async def get_pending_opportunities(limit: int = 100):
+    """Отримати можливості, що очікують підтвердження"""
     from app.database.models import Opportunity
     from sqlalchemy import create_engine, desc
     from sqlalchemy.orm import sessionmaker
@@ -1002,7 +1089,7 @@ async def get_pending_opportunities():
     try:
         opportunities = session.query(Opportunity).filter(
             Opportunity.alert_sent == False
-        ).order_by(desc(Opportunity.timestamp)).limit(100).all()
+        ).order_by(desc(Opportunity.timestamp)).limit(limit).all()
         return [
             {
                 "id": o.id,
@@ -1015,6 +1102,83 @@ async def get_pending_opportunities():
                 "usdt_amount": o.usdt_amount,
                 "buy_merchant": getattr(o, 'buy_merchant', 'Unknown'),
                 "sell_merchant": getattr(o, 'sell_merchant', 'Unknown')
+            }
+            for o in opportunities
+        ]
+    finally:
+        session.close()
+
+
+@app.get("/api/completed-deals")
+async def get_completed_deals(limit: int = 100):
+    """Отримати виконані угоди"""
+    from app.nbu.limits import Transaction
+    from app.database.models import Opportunity
+    from sqlalchemy import create_engine, desc
+    from sqlalchemy.orm import sessionmaker
+    from config.settings import settings
+
+    engine = create_engine(settings.DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    try:
+        # Отримуємо всі підтверджені можливості
+        opportunities = session.query(Opportunity).filter(
+            Opportunity.alert_sent == True,
+            Opportunity.net_profit > 0
+        ).order_by(desc(Opportunity.timestamp)).limit(limit).all()
+
+        return [
+            {
+                "id": o.id,
+                "timestamp": o.timestamp.isoformat(),
+                "spread": o.spread_percent,
+                "profit": o.net_profit,
+                "roi": o.roi_percent,
+                "buy_price": o.buy_price,
+                "sell_price": o.sell_price,
+                "usdt_amount": o.usdt_amount,
+                "buy_merchant": o.buy_merchant,
+                "sell_merchant": o.sell_merchant,
+                "status": "completed"
+            }
+            for o in opportunities
+        ]
+    finally:
+        session.close()
+
+
+@app.get("/api/rejected-deals")
+async def get_rejected_deals(limit: int = 100):
+    """Отримати відхилені можливості"""
+    from app.database.models import Opportunity
+    from sqlalchemy import create_engine, desc
+    from sqlalchemy.orm import sessionmaker
+    from config.settings import settings
+
+    engine = create_engine(settings.DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    try:
+        # Відхилені - це ті, що мають alert_sent = True, але не стали транзакціями
+        # і мають net_profit > 0
+        opportunities = session.query(Opportunity).filter(
+            Opportunity.alert_sent == True,
+            Opportunity.net_profit > 0
+        ).order_by(desc(Opportunity.timestamp)).limit(limit).all()
+
+        return [
+            {
+                "id": o.id,
+                "timestamp": o.timestamp.isoformat(),
+                "spread": o.spread_percent,
+                "profit": o.net_profit,
+                "roi": o.roi_percent,
+                "buy_price": o.buy_price,
+                "sell_price": o.sell_price,
+                "usdt_amount": o.usdt_amount,
+                "buy_merchant": o.buy_merchant,
+                "sell_merchant": o.sell_merchant
             }
             for o in opportunities
         ]
@@ -1050,7 +1214,7 @@ async def reject_all_opportunities():
 async def confirm_opportunity(opp_id: int):
     """Підтвердити можливість - створити транзакцію та зарезервувати ліміт НБУ"""
     from app.database.models import Opportunity
-    from app.nbu.limits import Transaction, NBULimit
+    from app.nbu.limits import NBULimit
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
     from config.settings import settings
@@ -1079,19 +1243,6 @@ async def confirm_opportunity(opp_id: int):
             return {"success": False,
                     "error": f"NBU limit exceeded! Need {amount_uah:,.0f}, available {limit.total_limit - limit.used_amount:,.0f}"}
 
-        # Створюємо транзакцію
-        transaction = Transaction(
-            amount_uah=amount_uah,
-            amount_usdt=opp.usdt_amount,
-            buy_merchant=getattr(opp, 'buy_merchant', 'Unknown'),
-            sell_merchant=getattr(opp, 'sell_merchant', 'Unknown'),
-            buy_price=opp.buy_price,
-            sell_price=opp.sell_price,
-            profit=opp.net_profit,
-            status='pending'
-        )
-        session.add(transaction)
-
         # Оновлюємо ліміт
         limit.used_amount += amount_uah
         limit.updated_at = datetime.now()
@@ -1100,7 +1251,7 @@ async def confirm_opportunity(opp_id: int):
         opp.alert_sent = True
 
         session.commit()
-        return {"success": True, "transaction_id": transaction.id}
+        return {"success": True}
     except Exception as e:
         session.rollback()
         return {"success": False, "error": str(e)}
@@ -1130,36 +1281,6 @@ async def reject_opportunity(opp_id: int):
     except Exception as e:
         session.rollback()
         return {"success": False, "error": str(e)}
-    finally:
-        session.close()
-
-
-@app.get("/api/completed-deals")
-async def get_completed_deals():
-    """Отримати виконані угоди (транзакції)"""
-    from app.nbu.limits import Transaction
-    from sqlalchemy import create_engine, desc
-    from sqlalchemy.orm import sessionmaker
-    from config.settings import settings
-
-    engine = create_engine(settings.DATABASE_URL)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    try:
-        transactions = session.query(Transaction).order_by(desc(Transaction.timestamp)).limit(100).all()
-        return [
-            {
-                "id": t.id,
-                "timestamp": t.timestamp.isoformat(),
-                "amount_uah": t.amount_uah,
-                "amount_usdt": t.amount_usdt,
-                "profit": t.profit,
-                "buy_merchant": t.buy_merchant,
-                "sell_merchant": t.sell_merchant,
-                "status": t.status
-            }
-            for t in transactions
-        ]
     finally:
         session.close()
 

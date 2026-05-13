@@ -264,26 +264,28 @@ class DatabaseManager:
         session = self.Session()
         try:
             since = datetime.now() - timedelta(days=days)
-            # ВРАХОВУЄМО ВСІ МОЖЛИВОСТІ (не тільки підтверджені)
+            # ВСІ можливості (без фільтра)
             opportunities = session.query(Opportunity).filter(
                 Opportunity.timestamp >= since
-                # alert_sent може бути True або False - ВСІ
             ).all()
 
             # Підготовка даних: [день_тижня][година] = сума_прибутку
             heatmap_data = [[0] * 24 for _ in range(7)]
             counts = [[0] * 24 for _ in range(7)]
-
             days_map = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'НД']
 
             for opp in opportunities:
-                weekday = opp.timestamp.weekday()
-                hour = opp.timestamp.hour
-                profit = opp.net_profit  # net_profit вже розрахований
+                try:
+                    weekday = opp.timestamp.weekday()
+                    hour = opp.timestamp.hour
+                    profit = opp.net_profit if opp.net_profit else 0
 
-                if profit > 0:
-                    heatmap_data[weekday][hour] += profit
-                    counts[weekday][hour] += 1
+                    if profit > 0:
+                        heatmap_data[weekday][hour] += profit
+                        counts[weekday][hour] += 1
+                except Exception as e:
+                    logger.error(f"Error processing opportunity {opp.id}: {e}")
+                    continue
 
             # Розраховуємо середній прибуток
             avg_profit = [[0] * 24 for _ in range(7)]
@@ -300,8 +302,12 @@ class DatabaseManager:
             }
         except Exception as e:
             logger.error(f"Failed to get heatmap data: {e}")
-            return {'days': ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'НД'], 'hours': list(range(24)),
-                    'data': [[0] * 24 for _ in range(7)], 'counts': [[0] * 24 for _ in range(7)]}
+            return {
+                'days': ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'НД'],
+                'hours': list(range(24)),
+                'data': [[0] * 24 for _ in range(7)],
+                'counts': [[0] * 24 for _ in range(7)]
+            }
         finally:
             session.close()
 

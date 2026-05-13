@@ -1166,6 +1166,14 @@ async def get_heatmap(days: int = 30, type: str = "all"):
     """API для отримання даних теплової карти"""
     return db.get_heatmap_data(days=days, type=type)
 
+@app.get("/api/heatmap-test")
+async def test_heatmap():
+    """Тестовий ендпоінт для перевірки"""
+    try:
+        data = db.get_heatmap_data(days=30)
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 @app.post("/api/reset-nbu-limit")
 async def reset_nbu_limit():

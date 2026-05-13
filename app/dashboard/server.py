@@ -323,6 +323,15 @@ HTML_PAGE = """
             font-size: 20px;
         }
 
+        .opportunities-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
         .table-container {
             overflow-x: auto;
         }
@@ -438,12 +447,31 @@ HTML_PAGE = """
         .log-warning { color: #ff9800; }
         .log-error { color: #f44336; }
 
+        .logs-controls {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+
+        .logs-controls select {
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+        }
+
         @media (max-width: 768px) {
             .charts-container {
                 grid-template-columns: 1fr;
             }
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+            .opportunities-header {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
     </style>
@@ -544,7 +572,10 @@ HTML_PAGE = """
         </div>
 
         <div class="opportunities-section">
-            <h2>🔔 Останні можливості (очікують підтвердження)</h2>
+            <div class="opportunities-header">
+                <h2>🔔 Останні можливості (очікують підтвердження)</h2>
+                <button class="btn-danger" onclick="rejectAllOpportunities()" style="padding: 8px 16px;">❌ Відхилити всі</button>
+            </div>
             <div class="table-container">
                 <table id="opportunities-table">
                     <thead>
@@ -582,7 +613,19 @@ HTML_PAGE = """
         </div>
 
         <div class="opportunities-section">
-            <h2>📋 Логи подій</h2>
+            <div class="opportunities-header">
+                <h2>📋 Логи подій</h2>
+                <div class="logs-controls">
+                    <label>Показати: 
+                        <select id="logs-limit" onchange="loadLogs()">
+                            <option value="50">50</option>
+                            <option value="100" selected>100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
             <div class="table-container">
                 <table id="logs-table">
                     <thead>
@@ -597,7 +640,7 @@ HTML_PAGE = """
     </div>
 
     <script>
-        let spreadChart = null, profitChart = null, heatmapChart = null, ws = null;
+        let spreadChart = null, profitChart = null, heatmapChart = null;
 
         function formatNumber(num, d=2) { return num ? num.toLocaleString('uk-UA', {minFractionDigits:d, maxFractionDigits:d}) : '---'; }
         function formatProfit(num) { return num ? (num >= 0 ? `+${formatNumber(num)}` : `-${formatNumber(Math.abs(num))}`) : '---'; }
@@ -625,6 +668,21 @@ HTML_PAGE = """
                 if (data.success) {
                     alert('✅ Базу даних скинуто!');
                     location.reload();
+                } else {
+                    alert('❌ Помилка: ' + data.error);
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function rejectAllOpportunities() {
+            if (!confirm('⚠️ ВИ ДІЙСНО ХОЧЕТЕ ВІДХИЛИТИ ВСІ МОЖЛИВОСТІ?\\nЦю дію НЕ МОЖНА скасувати!')) return;
+            if (!confirm(`Видалити всі можливості, що очікують підтвердження?`)) return;
+            try {
+                const resp = await fetch('/api/opportunities/reject-all', { method: 'POST' });
+                const data = await resp.json();
+                if (data.success) {
+                    alert(`✅ Відхилено ${data.count} можливостей!`);
+                    refreshData();
                 } else {
                     alert('❌ Помилка: ' + data.error);
                 }
@@ -776,8 +834,9 @@ HTML_PAGE = """
         }
 
         async function loadLogs() {
+            const limit = document.getElementById('logs-limit').value;
             try {
-                const resp = await fetch('/api/logs');
+                const resp = await fetch(`/api/logs?limit=${limit}`);
                 const logs = await resp.json();
                 const tbody = document.getElementById('logs-body');
                 if (!tbody) {
@@ -869,31 +928,21 @@ HTML_PAGE = """
 
         function refreshData() { fetchData(); loadNBULimit(); loadCompletedDeals(); loadLogs(); loadHeatmap(); }
 
-        function connectWebSocket() {
-            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${location.host}/ws`;
-            ws = new WebSocket(wsUrl);
-            ws.onopen = () => { console.log('WebSocket connected'); document.getElementById('status-text').textContent = 'Live режим'; };
-            ws.onmessage = (e) => { const data = JSON.parse(e.data); if(data.type === 'update') { updateTable(data.opportunities); updateCharts(data.opportunities); updateStats(data.opportunities); updateMarket(data.opportunities); loadNBULimit(); loadCompletedDeals(); loadLogs(); loadHeatmap(); } };
-            ws.onclose = () => { console.log('WebSocket disconnected'); setTimeout(connectWebSocket, 5000); };
-        }
-
         // Завантажуємо всі дані
-fetchData();
-loadNBULimit();
-loadCompletedDeals();
-loadLogs();
-loadHeatmap();
+        fetchData();
+        loadNBULimit();
+        loadCompletedDeals();
+        loadLogs();
+        loadHeatmap();
 
-// Оновлюємо дані кожні 5 секунд (без WebSocket)
-setInterval(() => {
-    fetchData();
-    loadNBULimit();
-    loadCompletedDeals();
-    loadLogs();
-    loadHeatmap();
-}, 5000);
-
+        // Оновлюємо дані кожні 5 секунд
+        setInterval(() => {
+            fetchData();
+            loadNBULimit();
+            loadCompletedDeals();
+            loadLogs();
+            loadHeatmap();
+        }, 5000);
     </script>
 </body>
 </html>
@@ -935,6 +984,30 @@ async def get_pending_opportunities():
             }
             for o in opportunities
         ]
+    finally:
+        session.close()
+
+
+@app.post("/api/opportunities/reject-all")
+async def reject_all_opportunities():
+    """Відхилити всі можливості, що очікують підтвердження"""
+    from app.database.models import Opportunity
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from config.settings import settings
+
+    engine = create_engine(settings.DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    try:
+        count = session.query(Opportunity).filter(Opportunity.alert_sent == False).update(
+            {Opportunity.alert_sent: True}
+        )
+        session.commit()
+        return {"success": True, "count": count}
+    except Exception as e:
+        session.rollback()
+        return {"success": False, "error": str(e)}
     finally:
         session.close()
 
@@ -1058,7 +1131,7 @@ async def get_completed_deals():
 
 
 @app.get("/api/logs")
-async def get_logs(limit: int = 200):
+async def get_logs(limit: int = 100):
     """Отримати логи з БД"""
     from app.database.models import Log
     from sqlalchemy import create_engine, desc

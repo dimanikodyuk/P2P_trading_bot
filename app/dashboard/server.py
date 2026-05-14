@@ -840,6 +840,27 @@ HTML_PAGE = """
             <div class="settings-form">
                 <form id="settings-form">
                     <div class="settings-group">
+                        <h3>🤖 Telegram бот</h3>
+                            <div class="setting-row">
+                                <div class="setting-label">
+                                    TELEGRAM_BOT_TOKEN
+                                    <small>Токен бота (отримати у @BotFather)</small>
+                                </div>
+                                <div class="setting-input">
+                                    <input type="text" id="TELEGRAM_BOT_TOKEN" placeholder="1234567890:ABCdefGHIjklmNOPqrstUVwxyz">
+                                    <div class="current-value" id="current-telegram-token">Поточне: не встановлено</div>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-label">
+                                    TELEGRAM_CHAT_ID
+                                    <small>ID чату (можна отримати у @userinfobot)</small>
+                                </div>
+                                <div class="setting-input">
+                                    <input type="text" id="TELEGRAM_CHAT_ID" placeholder="123456789">
+                                    <div class="current-value" id="current-telegram-chat">Поточне: не встановлено</div>
+                                </div>
+                            </div>
                         <h3>💰 Торгові параметри</h3>
                         <div class="setting-row">
                             <div class="setting-label">
@@ -1406,66 +1427,86 @@ async def get_dashboard():
 async def get_settings():
     """Отримати поточні налаштування"""
     return {
+        # Telegram
+        "TELEGRAM_BOT_TOKEN": settings.TELEGRAM_BOT_TOKEN or "",
+        "TELEGRAM_CHAT_ID": settings.TELEGRAM_CHAT_ID or "",
+        # Торгові параметри
         "STARTING_CAPITAL": settings.STARTING_CAPITAL,
         "MIN_SPREAD_PERCENT": settings.MIN_SPREAD_PERCENT,
         "MIN_DEAL_AMOUNT": settings.MIN_DEAL_AMOUNT,
         "MAX_DEAL_AMOUNT": settings.MAX_DEAL_AMOUNT,
         "SCAN_INTERVAL_SECONDS": settings.SCAN_INTERVAL_SECONDS,
         "SLIPPAGE_RESERVE_PERCENT": settings.SLIPPAGE_RESERVE_PERCENT,
+        # Фільтри мерчантів
         "MIN_COMPLETION_RATE": settings.MIN_COMPLETION_RATE,
         "MIN_ORDERS_COUNT": settings.MIN_ORDERS_COUNT,
         "MERCHANT_ONLINE_ONLY": settings.MERCHANT_ONLINE_ONLY,
+        # НБУ
         "NBU_MONTHLY_LIMIT": settings.NBU_MONTHLY_LIMIT,
+        # Інші
         "COOLDOWN_SECONDS": settings.COOLDOWN_SECONDS
     }
 
 
 @app.post("/api/settings")
 async def save_settings(request: dict):
-    """Зберегти налаштування в .env та перезапустити бота"""
-    import subprocess
-    import sys
+    """Зберегти налаштування в .env"""
+    import os
+    from pathlib import Path
 
     try:
+        # Правильний шлях до .env (на рівень вище від папки app)
+        env_path = Path(__file__).parent.parent / '.env'
+
         # Читаємо поточний .env
-        env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
         with open(env_path, 'r') as f:
             lines = f.readlines()
 
-        # Оновлюємо значення
+        # Всі налаштування для збереження
         new_settings = {
+            # Telegram
+            "TELEGRAM_BOT_TOKEN": request.get("TELEGRAM_BOT_TOKEN", ""),
+            "TELEGRAM_CHAT_ID": request.get("TELEGRAM_CHAT_ID", ""),
+            # Торгові параметри
             "STARTING_CAPITAL": str(request.get("STARTING_CAPITAL", 40000)),
             "MIN_SPREAD_PERCENT": str(request.get("MIN_SPREAD_PERCENT", 0.98)),
             "MIN_DEAL_AMOUNT": str(request.get("MIN_DEAL_AMOUNT", 20000)),
             "MAX_DEAL_AMOUNT": str(request.get("MAX_DEAL_AMOUNT", 42000)),
             "SCAN_INTERVAL_SECONDS": str(request.get("SCAN_INTERVAL_SECONDS", 5)),
             "SLIPPAGE_RESERVE_PERCENT": str(request.get("SLIPPAGE_RESERVE_PERCENT", 0.2)),
+            # Фільтри мерчантів
             "MIN_COMPLETION_RATE": str(request.get("MIN_COMPLETION_RATE", 90)),
             "MIN_ORDERS_COUNT": str(request.get("MIN_ORDERS_COUNT", 50)),
             "MERCHANT_ONLINE_ONLY": "true" if request.get("MERCHANT_ONLINE_ONLY", True) else "false",
+            # НБУ
             "NBU_MONTHLY_LIMIT": str(request.get("NBU_MONTHLY_LIMIT", 120000)),
-            "COOLDOWN_SECONDS": str(request.get("COOLDOWN_SECONDS", 30))
+            # Інші
+            "COOLDOWN_SECONDS": str(request.get("COOLDOWN_SECONDS", 30)),
+            # Фіксовані значення
+            "DATABASE_URL": "sqlite:///p2p_arbitrage.db",
+            "DASHBOARD_HOST": "0.0.0.0",
+            "DASHBOARD_PORT": "5002",
+            "LOG_LEVEL": "INFO"
         }
 
+        # Оновлюємо або додаємо параметри
         updated_lines = []
+        processed_keys = set()
+
         for line in lines:
-            updated = False
-            for key, value in new_settings.items():
-                if line.startswith(f"{key}="):
-                    updated_lines.append(f"{key}={value}\n")
-                    updated = True
-                    break
-            if not updated:
+            if '=' in line and not line.startswith('#'):
+                key = line.split('=')[0].strip()
+                if key in new_settings:
+                    updated_lines.append(f"{key}={new_settings[key]}\n")
+                    processed_keys.add(key)
+                else:
+                    updated_lines.append(line)
+            else:
                 updated_lines.append(line)
 
         # Додаємо відсутні параметри
-        existing_keys = set()
-        for line in updated_lines:
-            if '=' in line:
-                existing_keys.add(line.split('=')[0])
-
         for key, value in new_settings.items():
-            if key not in existing_keys:
+            if key not in processed_keys:
                 updated_lines.append(f"{key}={value}\n")
 
         # Записуємо .env
@@ -1474,12 +1515,6 @@ async def save_settings(request: dict):
 
         # Додаємо лог
         db.add_log("INFO", "Settings updated via web interface")
-
-        # Перезапускаємо бота (через systemd)
-        try:
-            subprocess.run(["sudo", "systemctl", "restart", "p2p_bot.service"], capture_output=True)
-        except:
-            pass  # Якщо не systemd, просто зберігаємо
 
         return {"success": True}
     except Exception as e:

@@ -1455,8 +1455,15 @@ async def save_settings(request: dict):
     from pathlib import Path
 
     try:
-        # Правильний шлях до .env (на рівень вище від папки app)
+        # Правильний шлях до .env (корінь проекту)
         env_path = Path(__file__).parent.parent / '.env'
+
+        print(f"Looking for .env at: {env_path}")  # Для діагностики
+
+        # Якщо файлу немає - створюємо
+        if not env_path.exists():
+            with open(env_path, 'w') as f:
+                f.write("# P2P Arbitrage Bot Configuration\n")
 
         # Читаємо поточний .env
         with open(env_path, 'r') as f:
@@ -1518,6 +1525,7 @@ async def save_settings(request: dict):
 
         return {"success": True}
     except Exception as e:
+        print(f"Error saving settings: {e}")  # Для діагностики
         return {"success": False, "error": str(e)}
 
 

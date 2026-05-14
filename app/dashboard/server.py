@@ -6,9 +6,11 @@ from datetime import datetime
 from typing import List
 import threading
 import uvicorn
+import os
 
 from app.database.db_manager import DatabaseManager
 from app.nbu.limits import NBULimitManager
+from config.settings import settings
 
 app = FastAPI(title="P2P Arbitrage Dashboard", version="1.0.0")
 
@@ -73,6 +75,43 @@ HTML_PAGE = """
         .container {
             max-width: 1600px;
             margin: 0 auto;
+        }
+
+        /* Таби */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #667eea;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         .header {
@@ -403,6 +442,91 @@ HTML_PAGE = """
             font-size: 12px;
         }
 
+        .btn-save {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+
+        .btn-save:hover {
+            opacity: 0.9;
+        }
+
+        .settings-form {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+        }
+
+        .settings-group {
+            margin-bottom: 25px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+
+        .settings-group h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .setting-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .setting-label {
+            width: 250px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .setting-label small {
+            display: block;
+            font-weight: normal;
+            font-size: 11px;
+            color: #999;
+            margin-top: 3px;
+        }
+
+        .setting-input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .setting-input input, .setting-input select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .setting-input .current-value {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .checkbox-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-input input {
+            width: 20px;
+            height: 20px;
+        }
+
         .btn-success:hover, .btn-danger:hover, .btn-warning:hover {
             opacity: 0.8;
         }
@@ -435,18 +559,6 @@ HTML_PAGE = """
             color: white;
         }
 
-        .log-entry {
-            font-family: monospace;
-            font-size: 12px;
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .log-info { color: #2196f3; }
-        .log-success { color: #4caf50; }
-        .log-warning { color: #ff9800; }
-        .log-error { color: #f44336; }
-
         .controls {
             display: flex;
             justify-content: flex-end;
@@ -473,6 +585,12 @@ HTML_PAGE = """
                 flex-direction: column;
                 align-items: flex-start;
             }
+            .setting-row {
+                flex-direction: column;
+            }
+            .setting-label {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -484,229 +602,375 @@ HTML_PAGE = """
                 <div class="status-dot"></div>
                 <span id="status-text">Активний</span>
                 <button class="refresh-btn" onclick="refreshData()">🔄 Оновити</button>
-                <button class="reset-btn" onclick="resetDatabase()">🗑️ Скинути БД</button>
-                <button class="reset-btn" onclick="resetNBU()" style="background: #ff9800;">🏦 Скинути ліміт НБУ</button>
                 <span id="last-update"></span>
             </div>
         </div>
 
-        <div class="market-info" id="market-info">
-            <div class="price-item">
-                <div class="price-label">💰 Найкраща ціна КУПІВЛІ USDT</div>
-                <div class="price-value buy" id="best-buy">---</div>
-                <div class="price-label">UAH</div>
+        <!-- Таби -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('dashboard')">📊 Дашборд</button>
+            <button class="tab-btn" onclick="showTab('settings')">⚙️ Налаштування</button>
+        </div>
+
+        <!-- Вкладка Дашборд -->
+        <div id="dashboard-tab" class="tab-content active">
+            <div class="market-info" id="market-info">
+                <div class="price-item">
+                    <div class="price-label">💰 Найкраща ціна КУПІВЛІ USDT</div>
+                    <div class="price-value buy" id="best-buy">---</div>
+                    <div class="price-label">UAH</div>
+                </div>
+                <div class="price-item">
+                    <div class="price-label">💵 Найкраща ціна ПРОДАЖУ USDT</div>
+                    <div class="price-value sell" id="best-sell">---</div>
+                    <div class="price-label">UAH</div>
+                </div>
+                <div class="price-item">
+                    <div class="price-label">📈 Поточний спред</div>
+                    <div class="spread-value" id="current-spread">---</div>
+                    <div class="price-label">%</div>
+                </div>
             </div>
-            <div class="price-item">
-                <div class="price-label">💵 Найкраща ціна ПРОДАЖУ USDT</div>
-                <div class="price-value sell" id="best-sell">---</div>
-                <div class="price-label">UAH</div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">💰 Загальний прибуток</div>
+                    <div class="stat-value" id="total-profit">0</div>
+                    <div class="stat-unit">UAH (за 24 год)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">📈 Середній ROI</div>
+                    <div class="stat-value" id="avg-roi">0</div>
+                    <div class="stat-unit">%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">🎯 Знайдено угод</div>
+                    <div class="stat-value" id="total-opps">0</div>
+                    <div class="stat-unit">за 24 год</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">💎 Найкращий прибуток</div>
+                    <div class="stat-value" id="max-profit">0</div>
+                    <div class="stat-unit">UAH</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">🏦 Ліміт НБУ</div>
+                    <div class="stat-value" id="nbu-used">0</div>
+                    <div class="stat-unit">грн використано з <span id="nbu-total">120000</span></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="nbu-progress" style="width: 0%;"></div>
+                    </div>
+                    <div id="nbu-percent" style="font-size: 12px; margin-top: 5px;">0%</div>
+                    <div id="nbu-warning" class="warning-text" style="display: none;">⚠️ Ліміт майже вичерпано!</div>
+                </div>
             </div>
-            <div class="price-item">
-                <div class="price-label">📈 Поточний спред</div>
-                <div class="spread-value" id="current-spread">---</div>
-                <div class="price-label">%</div>
+
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3>📊 Історія спредів (останні 50 угод)</h3>
+                    <div id="spread-chart" style="height: 400px;"></div>
+                </div>
+                <div class="chart-card">
+                    <h3>💰 Прибуток за угодами</h3>
+                    <div id="profit-chart" style="height: 400px;"></div>
+                </div>
+                <div class="chart-card">
+                    <h3>📊 Теплова карта прибутку (по годинах та днях)</h3>
+                    <div class="heatmap-controls">
+                        <label>Тип угод: 
+                            <select id="heatmap-type" onchange="loadHeatmap()">
+                                <option value="all">Всі можливості</option>
+                                <option value="confirmed">Лише підтверджені</option>
+                            </select>
+                        </label>
+                        <label>Період: 
+                            <select id="heatmap-days" onchange="loadHeatmap()">
+                                <option value="7">7 днів</option>
+                                <option value="14">14 днів</option>
+                                <option value="30" selected>30 днів</option>
+                                <option value="60">60 днів</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div id="heatmap-chart" style="height: 400px; margin-top: 10px;"></div>
+                    <div class="heatmap-legend">
+                        <span>💰 Середній прибуток (грн):</span>
+                        <div class="legend-gradient"></div>
+                        <span>Низький → Високий</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="opportunities-section">
+                <div class="opportunities-header">
+                    <h2>🔔 Останні можливості (очікують підтвердження)</h2>
+                    <button class="btn-danger" onclick="rejectAllOpportunities()" style="padding: 8px 16px;">❌ Відхилити всі</button>
+                </div>
+                <div class="table-container">
+                    <table id="opportunities-table">
+                        <thead>
+                            <tr>
+                                <th>⏰ Час</th>
+                                <th>💵 Купівля</th>
+                                <th>💰 Продаж</th>
+                                <th>📈 Спред</th>
+                                <th>💸 Сума купівлі</th>
+                                <th>💵 Сума продажу</th>
+                                <th>💚 Прибуток</th>
+                                <th>📊 ROI</th>
+                                <th>Дія</th>
+                            </tr>
+                        </thead>
+                        <tbody id="opportunities-body">
+                            <tr><td colspan="9" class="loading">🔄 Завантаження......</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="opportunities-section">
+                <div class="opportunities-header">
+                    <h2>✅ Виконані угоди</h2>
+                    <div class="controls">
+                        <label>Показати: 
+                            <select id="completed-limit" onchange="loadCompletedDeals()">
+                                <option value="50">50</option>
+                                <option value="100" selected>100</option>
+                                <option value="200">200</option>
+                                <option value="500">500</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="completed-deals-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>⏰ Час</th>
+                                <th>💵 Купівля</th>
+                                <th>💰 Продаж</th>
+                                <th>📈 Спред</th>
+                                <th>💸 Сума купівлі</th>
+                                <th>💵 Сума продажу</th>
+                                <th>💚 Прибуток</th>
+                                <th>📊 ROI</th>
+                                <th>👤 Продавець</th>
+                                <th>👤 Покупець</th>
+                                <th>📌 Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody id="completed-deals-body">
+                            <tr><td colspan="12" class="loading">Завантаження...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="opportunities-section">
+                <div class="opportunities-header">
+                    <h2>❌ Відхилені можливості</h2>
+                    <div class="controls">
+                        <label>Показати: 
+                            <select id="rejected-limit" onchange="loadRejectedDeals()">
+                                <option value="50">50</option>
+                                <option value="100" selected>100</option>
+                                <option value="200">200</option>
+                                <option value="500">500</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="rejected-deals-table">
+                        <thead>
+                            <tr>
+                                <th>⏰ Час</th>
+                                <th>💵 Купівля</th>
+                                <th>💰 Продаж</th>
+                                <th>📈 Спред</th>
+                                <th>💸 Сума купівлі</th>
+                                <th>💵 Сума продажу</th>
+                                <th>💚 Прибуток</th>
+                                <th>📊 ROI</th>
+                                <th>👤 Продавець</th>
+                                <th>👤 Покупець</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rejected-deals-body">
+                            <tr><td colspan="10" class="loading">Завантаження...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="opportunities-section">
+                <div class="opportunities-header">
+                    <h2>📋 Логи подій</h2>
+                    <div class="controls">
+                        <label>Показати: 
+                            <select id="logs-limit" onchange="loadLogs()">
+                                <option value="50">50</option>
+                                <option value="100" selected>100</option>
+                                <option value="200">200</option>
+                                <option value="500">500</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="logs-table">
+                        <thead>
+                            <tr>
+                                <th>⏰ Час</th>
+                                <th>📊 Рівень</th>
+                                <th>📝 Повідомлення</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-body">
+                            <tr><td colspan="3" class="loading">Завантаження...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-title">💰 Загальний прибуток</div>
-                <div class="stat-value" id="total-profit">0</div>
-                <div class="stat-unit">UAH (за 24 год)</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-title">📈 Середній ROI</div>
-                <div class="stat-value" id="avg-roi">0</div>
-                <div class="stat-unit">%</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-title">🎯 Знайдено угод</div>
-                <div class="stat-value" id="total-opps">0</div>
-                <div class="stat-unit">за 24 год</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-title">💎 Найкращий прибуток</div>
-                <div class="stat-value" id="max-profit">0</div>
-                <div class="stat-unit">UAH</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-title">🏦 Ліміт НБУ</div>
-                <div class="stat-value" id="nbu-used">0</div>
-                <div class="stat-unit">грн використано з <span id="nbu-total">120000</span></div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="nbu-progress" style="width: 0%;"></div>
-                </div>
-                <div id="nbu-percent" style="font-size: 12px; margin-top: 5px;">0%</div>
-                <div id="nbu-warning" class="warning-text" style="display: none;">⚠️ Ліміт майже вичерпано!</div>
-            </div>
-        </div>
+        <!-- Вкладка Налаштування -->
+        <div id="settings-tab" class="tab-content">
+            <div class="settings-form">
+                <form id="settings-form">
+                    <div class="settings-group">
+                        <h3>💰 Торгові параметри</h3>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                STARTING_CAPITAL
+                                <small>Початковий капітал для розрахунку прибутку (грн)</small>
+                            </div>
+                            <div class="setting-input">
+                                <input type="number" id="STARTING_CAPITAL" step="1000" value="40000">
+                                <div class="current-value">Поточне: 40000 грн</div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                MIN_SPREAD_PERCENT
+                                <small>Мінімальний спред для сигналу (%)</small>
+                            </div>
+                            <div class="setting-input">
+                                <input type="number" id="MIN_SPREAD_PERCENT" step="0.1" value="0.98">
+                                <div class="current-value">Поточне: 0.98%</div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                MIN_DEAL_AMOUNT
+                                <small>Мінімальна сума угоди (грн)</small>
+                            </div>
+                            <div class="setting-input">
+                                <input type="number" id="MIN_DEAL_AMOUNT" step="1000" value="20000">
+                                <div class="current-value">Поточне: 20000 грн</div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                MAX_DEAL_AMOUNT
+                                <small>Максимальна сума угоди (грн) | 0 = без обмежень</small>
+                            </div>
+                            <div class="setting-input">
+                                <input type="number" id="MAX_DEAL_AMOUNT" step="1000" value="42000">
+                                <div class="current-value">Поточне: 42000 грн</div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                SCAN_INTERVAL_SECONDS
+                                <small>Інтервал сканування ринку (секунди)</small>
+                            </div>
+                            <div class="setting-input">
+                                <input type="number" id="SCAN_INTERVAL_SECONDS" step="1" value="5">
+                                <div class="current-value">Поточне: 5 сек</div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                SLIPPAGE_RESERVE_PERCENT
+                                <small>Резерв на прослизання (%)</small>
+                            </div>
+                            <div class="setting-input">
+                                <input type="number" id="SLIPPAGE_RESERVE_PERCENT" step="0.1" value="0.2">
+                                <div class="current-value">Поточне: 0.2%</div>
+                            </div>
+                        </div>
+                    </div>
 
-        <div class="charts-container">
-            <div class="chart-card">
-                <h3>📊 Історія спредів (останні 50 угод)</h3>
-                <div id="spread-chart" style="height: 400px;"></div>
-            </div>
-            <div class="chart-card">
-                <h3>💰 Прибуток за угодами</h3>
-                <div id="profit-chart" style="height: 400px;"></div>
-            </div>
-            <div class="chart-card">
-                <h3>📊 Теплова карта прибутку (по годинах та днях)</h3>
-                <div class="heatmap-controls">
-                    <label>Тип угод: 
-                        <select id="heatmap-type" onchange="loadHeatmap()">
-                            <option value="all">Всі можливості</option>
-                            <option value="confirmed">Лише підтверджені</option>
-                        </select>
-                    </label>
-                    <label>Період: 
-                        <select id="heatmap-days" onchange="loadHeatmap()">
-                            <option value="7">7 днів</option>
-                            <option value="14">14 днів</option>
-                            <option value="30" selected>30 днів</option>
-                            <option value="60">60 днів</option>
-                        </select>
-                    </label>
-                </div>
-                <div id="heatmap-chart" style="height: 400px; margin-top: 10px;"></div>
-                <div class="heatmap-legend">
-                    <span>💰 Середній прибуток (грн):</span>
-                    <div class="legend-gradient"></div>
-                    <span>Низький → Високий</span>
-                </div>
-            </div>
-        </div>
+                    <div class="settings-group">
+                        <h3>🛡 Фільтри мерчантів</h3>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                MIN_COMPLETION_RATE
+                                <small>Мінімальний рейтинг мерчанта (%)</small>
+                            </div>
+                            <div class="setting-input">
+                                <input type="number" id="MIN_COMPLETION_RATE" step="1" value="90">
+                                <div class="current-value">Поточне: 90%</div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                MIN_ORDERS_COUNT
+                                <small>Мінімальна кількість угод у мерчанта</small>
+                            </div>
+                            <div class="setting-input">
+                                <input type="number" id="MIN_ORDERS_COUNT" step="10" value="50">
+                                <div class="current-value">Поточне: 50 угод</div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                MERCHANT_ONLINE_ONLY
+                                <small>Враховувати лише онлайн мерчантів</small>
+                            </div>
+                            <div class="setting-input checkbox-input">
+                                <input type="checkbox" id="MERCHANT_ONLINE_ONLY" checked>
+                                <label>Тільки онлайн мерчанти</label>
+                            </div>
+                        </div>
+                    </div>
 
-        <div class="opportunities-section">
-            <div class="opportunities-header">
-                <h2>🔔 Останні можливості (очікують підтвердження)</h2>
-                <button class="btn-danger" onclick="rejectAllOpportunities()" style="padding: 8px 16px;">❌ Відхилити всі</button>
-            </div>
-            <div class="table-container">
-                <table id="opportunities-table">
-                    <thead>
-                        <tr>
-                            <th>⏰ Час</th>
-                            <th>💵 Купівля</th>
-                            <th>💰 Продаж</th>
-                            <th>📈 Спред</th>
-                            <th>💸 Сума купівлі</th>
-                            <th>💵 Сума продажу</th>
-                            <th>💚 Прибуток</th>
-                            <th>📊 ROI</th>
-                            <th>Дія</th>
-                        </tr>
-                    </thead>
-                    <tbody id="opportunities-body">
-                        <tr><td colspan="9" class="loading">🔄 Завантаження......</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                    <div class="settings-group">
+                        <h3>🏦 Ліміт НБУ</h3>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                NBU_MONTHLY_LIMIT
+                                <small>Місячний ліміт НБУ для P2P угод (грн)</small>
+                            </div>
+                            <div class="setting-input">
+                                <input type="number" id="NBU_MONTHLY_LIMIT" step="10000" value="120000">
+                                <div class="current-value">Поточне: 120000 грн</div>
+                            </div>
+                        </div>
+                    </div>
 
-        <div class="opportunities-section">
-            <div class="opportunities-header">
-                <h2>✅ Виконані угоди</h2>
-                <div class="controls">
-                    <label>Показати: 
-                        <select id="completed-limit" onchange="loadCompletedDeals()">
-                            <option value="50">50</option>
-                            <option value="100" selected>100</option>
-                            <option value="200">200</option>
-                            <option value="500">500</option>
-                        </select>
-                    </label>
-                </div>
-            </div>
-            <div class="table-container">
-                <table id="completed-deals-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>⏰ Час</th>
-                            <th>💵 Купівля</th>
-                            <th>💰 Продаж</th>
-                            <th>📈 Спред</th>
-                            <th>💸 Сума купівлі</th>
-                            <th>💵 Сума продажу</th>
-                            <th>💚 Прибуток</th>
-                            <th>📊 ROI</th>
-                            <th>👤 Продавець</th>
-                            <th>👤 Покупець</th>
-                            <th>📌 Статус</th>
-                        </tr>
-                    </thead>
-                    <tbody id="completed-deals-body">
-                        <tr><td colspan="12" class="loading">Завантаження...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                    <div class="settings-group">
+                        <h3>📋 Інші параметри</h3>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                COOLDOWN_SECONDS
+                                <small>Пауза між однаковими сигналами (секунди)</small>
+                            </div>
+                            <div class="setting-input">
+                                <input type="number" id="COOLDOWN_SECONDS" step="5" value="30">
+                                <div class="current-value">Поточне: 30 сек</div>
+                            </div>
+                        </div>
+                    </div>
 
-        <div class="opportunities-section">
-            <div class="opportunities-header">
-                <h2>❌ Відхилені можливості</h2>
-                <div class="controls">
-                    <label>Показати: 
-                        <select id="rejected-limit" onchange="loadRejectedDeals()">
-                            <option value="50">50</option>
-                            <option value="100" selected>100</option>
-                            <option value="200">200</option>
-                            <option value="500">500</option>
-                        </select>
-                    </label>
-                </div>
-            </div>
-            <div class="table-container">
-                <table id="rejected-deals-table">
-                    <thead>
-                        <tr>
-                            <th>⏰ Час</th>
-                            <th>💵 Купівля</th>
-                            <th>💰 Продаж</th>
-                            <th>📈 Спред</th>
-                            <th>💸 Сума купівлі</th>
-                            <th>💵 Сума продажу</th>
-                            <th>💚 Прибуток</th>
-                            <th>📊 ROI</th>
-                            <th>👤 Продавець</th>
-                            <th>👤 Покупець</th>
-                        </tr>
-                    </thead>
-                    <tbody id="rejected-deals-body">
-                        <tr><td colspan="10" class="loading">Завантаження...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="opportunities-section">
-            <div class="opportunities-header">
-                <h2>📋 Логи подій</h2>
-                <div class="controls">
-                    <label>Показати: 
-                        <select id="logs-limit" onchange="loadLogs()">
-                            <option value="50">50</option>
-                            <option value="100" selected>100</option>
-                            <option value="200">200</option>
-                            <option value="500">500</option>
-                        </select>
-                    </label>
-                </div>
-            </div>
-            <div class="table-container">
-                <table id="logs-table">
-                    <thead>
-                        <tr>
-                            <th>⏰ Час</th>
-                            <th>📊 Рівень</th>
-                            <th>📝 Повідомлення</th>
-                        </tr>
-                    </thead>
-                    <tbody id="logs-body">
-                        <tr><td colspan="3" class="loading">Завантаження...</td></tr>
-                    </tbody>
-                </table>
+                    <div style="text-align: center;">
+                        <button type="button" class="btn-save" onclick="saveSettings()">💾 Зберегти налаштування</button>
+                        <button type="button" class="btn-save" style="background: #ff9800;" onclick="loadSettings()">🔄 Перезавантажити</button>
+                    </div>
+                </form>
+                <div id="settings-message" style="text-align: center; margin-top: 15px; color: #4caf50; display: none;">✅ Налаштування збережено! Бот буде перезапущено.</div>
             </div>
         </div>
     </div>
@@ -716,6 +980,66 @@ HTML_PAGE = """
 
         function formatNumber(num, d=2) { return num ? num.toLocaleString('uk-UA', {minFractionDigits:d, maxFractionDigits:d}) : '---'; }
         function formatProfit(num) { return num ? (num >= 0 ? `+${formatNumber(num)}` : `-${formatNumber(Math.abs(num))}`) : '---'; }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function loadSettings() {
+            try {
+                const resp = await fetch('/api/settings');
+                const data = await resp.json();
+                document.getElementById('STARTING_CAPITAL').value = data.STARTING_CAPITAL;
+                document.getElementById('MIN_SPREAD_PERCENT').value = data.MIN_SPREAD_PERCENT;
+                document.getElementById('MIN_DEAL_AMOUNT').value = data.MIN_DEAL_AMOUNT;
+                document.getElementById('MAX_DEAL_AMOUNT').value = data.MAX_DEAL_AMOUNT;
+                document.getElementById('SCAN_INTERVAL_SECONDS').value = data.SCAN_INTERVAL_SECONDS;
+                document.getElementById('SLIPPAGE_RESERVE_PERCENT').value = data.SLIPPAGE_RESERVE_PERCENT;
+                document.getElementById('MIN_COMPLETION_RATE').value = data.MIN_COMPLETION_RATE;
+                document.getElementById('MIN_ORDERS_COUNT').value = data.MIN_ORDERS_COUNT;
+                document.getElementById('MERCHANT_ONLINE_ONLY').checked = data.MERCHANT_ONLINE_ONLY;
+                document.getElementById('NBU_MONTHLY_LIMIT').value = data.NBU_MONTHLY_LIMIT;
+                document.getElementById('COOLDOWN_SECONDS').value = data.COOLDOWN_SECONDS;
+            } catch(e) { console.error(e); }
+        }
+
+        async function saveSettings() {
+            const settings = {
+                STARTING_CAPITAL: parseFloat(document.getElementById('STARTING_CAPITAL').value),
+                MIN_SPREAD_PERCENT: parseFloat(document.getElementById('MIN_SPREAD_PERCENT').value),
+                MIN_DEAL_AMOUNT: parseFloat(document.getElementById('MIN_DEAL_AMOUNT').value),
+                MAX_DEAL_AMOUNT: parseFloat(document.getElementById('MAX_DEAL_AMOUNT').value),
+                SCAN_INTERVAL_SECONDS: parseInt(document.getElementById('SCAN_INTERVAL_SECONDS').value),
+                SLIPPAGE_RESERVE_PERCENT: parseFloat(document.getElementById('SLIPPAGE_RESERVE_PERCENT').value),
+                MIN_COMPLETION_RATE: parseFloat(document.getElementById('MIN_COMPLETION_RATE').value),
+                MIN_ORDERS_COUNT: parseInt(document.getElementById('MIN_ORDERS_COUNT').value),
+                MERCHANT_ONLINE_ONLY: document.getElementById('MERCHANT_ONLINE_ONLY').checked,
+                NBU_MONTHLY_LIMIT: parseFloat(document.getElementById('NBU_MONTHLY_LIMIT').value),
+                COOLDOWN_SECONDS: parseInt(document.getElementById('COOLDOWN_SECONDS').value)
+            };
+
+            try {
+                const resp = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings)
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    const msg = document.getElementById('settings-message');
+                    msg.style.display = 'block';
+                    setTimeout(() => msg.style.display = 'none', 3000);
+                    alert('✅ Налаштування збережено! Бот перезапуститься автоматично.');
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    alert('❌ Помилка: ' + data.error);
+                }
+            } catch(e) { console.error(e); }
+        }
 
         async function resetNBU() {
             if (!confirm('🏦 Скинути ліміт НБУ?\\nВсі використані кошти будуть обнулені.')) return;
@@ -889,16 +1213,18 @@ HTML_PAGE = """
                     let statusText = t.status === 'completed' ? 'Виконано' : 'Скасовано';
                     const buyAmount = t.amount_usdt * t.buy_price;
                     const sellAmount = t.amount_usdt * t.sell_price;
+                    const spread = ((t.sell_price - t.buy_price) / t.buy_price) * 100;
+                    const roi = (t.profit / t.amount_uah) * 100;
                     return `<tr>
                         <td>${t.id}</td>
                         <td>${new Date(t.timestamp).toLocaleString('uk-UA')}</td>
                         <td>${formatNumber(t.buy_price)} UAH</td>
                         <td>${formatNumber(t.sell_price)} UAH</td>
-                        <td>${formatNumber(t.spread, 2)}%</td>
+                        <td>${formatNumber(spread, 2)}%</td>
                         <td class="profit-positive">${formatNumber(buyAmount, 0)} грн</td>
                         <td class="profit-positive">${formatNumber(sellAmount, 0)} грн</td>
                         <td class="profit-positive">${formatProfit(t.profit)} UAH</td>
-                        <td>${formatNumber(t.roi, 2)}%</td>
+                        <td>${formatNumber(roi, 2)}%</td>
                         <td>${t.buy_merchant}</td>
                         <td>${t.sell_merchant}</td>
                         <td><span class="status-badge ${statusClass}">${statusText}</span></td>
@@ -943,7 +1269,7 @@ HTML_PAGE = """
                 const logs = await resp.json();
                 const tbody = document.getElementById('logs-body');
                 if (!logs || logs.length === 0) {
-                    tbody.innerHTML = '</tr><td colspan="3" class="loading">📭 Немає логів</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="3" class="loading">📭 Немає логів</td></tr>';
                     return;
                 }
                 tbody.innerHTML = logs.map(log => {
@@ -978,7 +1304,7 @@ HTML_PAGE = """
                     <td>
                         <button class="btn-success" onclick="confirmOpportunity(${o.id}, ${buyAmount}, ${sellAmount}, ${o.profit}, '${o.buy_merchant}', '${o.sell_merchant}')">✅ Підтвердити</button>
                         <button class="btn-danger" onclick="rejectOpportunity(${o.id})">❌ Відхилити</button>
-                    </td>
+                     </td>
                 </tr>`;
             }).join('');
         }
@@ -1054,6 +1380,7 @@ HTML_PAGE = """
         loadRejectedDeals();
         loadLogs();
         loadHeatmap();
+        loadSettings();
 
         // Оновлення кожні 5 секунд
         setInterval(() => {
@@ -1073,6 +1400,90 @@ HTML_PAGE = """
 @app.get("/", response_class=HTMLResponse)
 async def get_dashboard():
     return HTMLResponse(content=HTML_PAGE)
+
+
+@app.get("/api/settings")
+async def get_settings():
+    """Отримати поточні налаштування"""
+    return {
+        "STARTING_CAPITAL": settings.STARTING_CAPITAL,
+        "MIN_SPREAD_PERCENT": settings.MIN_SPREAD_PERCENT,
+        "MIN_DEAL_AMOUNT": settings.MIN_DEAL_AMOUNT,
+        "MAX_DEAL_AMOUNT": settings.MAX_DEAL_AMOUNT,
+        "SCAN_INTERVAL_SECONDS": settings.SCAN_INTERVAL_SECONDS,
+        "SLIPPAGE_RESERVE_PERCENT": settings.SLIPPAGE_RESERVE_PERCENT,
+        "MIN_COMPLETION_RATE": settings.MIN_COMPLETION_RATE,
+        "MIN_ORDERS_COUNT": settings.MIN_ORDERS_COUNT,
+        "MERCHANT_ONLINE_ONLY": settings.MERCHANT_ONLINE_ONLY,
+        "NBU_MONTHLY_LIMIT": settings.NBU_MONTHLY_LIMIT,
+        "COOLDOWN_SECONDS": settings.COOLDOWN_SECONDS
+    }
+
+
+@app.post("/api/settings")
+async def save_settings(request: dict):
+    """Зберегти налаштування в .env та перезапустити бота"""
+    import subprocess
+    import sys
+
+    try:
+        # Читаємо поточний .env
+        env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+        with open(env_path, 'r') as f:
+            lines = f.readlines()
+
+        # Оновлюємо значення
+        new_settings = {
+            "STARTING_CAPITAL": str(request.get("STARTING_CAPITAL", 40000)),
+            "MIN_SPREAD_PERCENT": str(request.get("MIN_SPREAD_PERCENT", 0.98)),
+            "MIN_DEAL_AMOUNT": str(request.get("MIN_DEAL_AMOUNT", 20000)),
+            "MAX_DEAL_AMOUNT": str(request.get("MAX_DEAL_AMOUNT", 42000)),
+            "SCAN_INTERVAL_SECONDS": str(request.get("SCAN_INTERVAL_SECONDS", 5)),
+            "SLIPPAGE_RESERVE_PERCENT": str(request.get("SLIPPAGE_RESERVE_PERCENT", 0.2)),
+            "MIN_COMPLETION_RATE": str(request.get("MIN_COMPLETION_RATE", 90)),
+            "MIN_ORDERS_COUNT": str(request.get("MIN_ORDERS_COUNT", 50)),
+            "MERCHANT_ONLINE_ONLY": "true" if request.get("MERCHANT_ONLINE_ONLY", True) else "false",
+            "NBU_MONTHLY_LIMIT": str(request.get("NBU_MONTHLY_LIMIT", 120000)),
+            "COOLDOWN_SECONDS": str(request.get("COOLDOWN_SECONDS", 30))
+        }
+
+        updated_lines = []
+        for line in lines:
+            updated = False
+            for key, value in new_settings.items():
+                if line.startswith(f"{key}="):
+                    updated_lines.append(f"{key}={value}\n")
+                    updated = True
+                    break
+            if not updated:
+                updated_lines.append(line)
+
+        # Додаємо відсутні параметри
+        existing_keys = set()
+        for line in updated_lines:
+            if '=' in line:
+                existing_keys.add(line.split('=')[0])
+
+        for key, value in new_settings.items():
+            if key not in existing_keys:
+                updated_lines.append(f"{key}={value}\n")
+
+        # Записуємо .env
+        with open(env_path, 'w') as f:
+            f.writelines(updated_lines)
+
+        # Додаємо лог
+        db.add_log("INFO", "Settings updated via web interface")
+
+        # Перезапускаємо бота (через systemd)
+        try:
+            subprocess.run(["sudo", "systemctl", "restart", "p2p_bot.service"], capture_output=True)
+        except:
+            pass  # Якщо не systemd, просто зберігаємо
+
+        return {"success": True}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 
 @app.get("/api/opportunities/pending")
@@ -1121,7 +1532,6 @@ async def get_completed_deals(limit: int = 100):
     Session = sessionmaker(bind=engine)
     session = Session()
     try:
-        # Беремо тільки транзакції зі статусом 'completed'
         transactions = session.query(Transaction).filter(
             Transaction.status == 'completed'
         ).order_by(desc(Transaction.timestamp)).limit(limit).all()
@@ -1134,6 +1544,8 @@ async def get_completed_deals(limit: int = 100):
                 "profit": t.profit,
                 "buy_merchant": t.buy_merchant,
                 "sell_merchant": t.sell_merchant,
+                "buy_price": t.buy_price,
+                "sell_price": t.sell_price,
                 "status": t.status
             }
             for t in transactions
@@ -1154,20 +1566,15 @@ async def get_rejected_deals(limit: int = 100):
     Session = sessionmaker(bind=engine)
     session = Session()
     try:
-        # Відхилені - це можливості, які були позначені alert_sent=True,
-        # але для яких НЕ було створено транзакцію
-        # Отримуємо всі pending транзакції
         from app.nbu.limits import Transaction
         trans_ids = [t.id for t in session.query(Transaction.id).all()]
 
-        # Якщо немає транзакцій, показуємо всі alert_sent=True
         if not trans_ids:
             opportunities = session.query(Opportunity).filter(
                 Opportunity.alert_sent == True,
                 Opportunity.net_profit > 0
             ).order_by(desc(Opportunity.timestamp)).limit(limit).all()
         else:
-            # Показуємо тільки ті, що не пов'язані з транзакціями
             opportunities = session.query(Opportunity).filter(
                 Opportunity.alert_sent == True,
                 Opportunity.net_profit > 0,
@@ -1221,7 +1628,7 @@ async def reject_all_opportunities():
 async def confirm_opportunity(opp_id: int):
     """Підтвердити можливість - створити транзакцію та зарезервувати ліміт НБУ"""
     from app.database.models import Opportunity
-    from app.nbu.limits import NBULimit
+    from app.nbu.limits import NBULimit, Transaction
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
     from config.settings import settings
@@ -1238,11 +1645,10 @@ async def confirm_opportunity(opp_id: int):
         if opp.alert_sent:
             return {"success": False, "error": "Opportunity already processed"}
 
-        # Резервуємо ліміт НБУ
         current_month = datetime.now().strftime('%Y-%m')
         limit = session.query(NBULimit).filter(NBULimit.month == current_month).first()
         if not limit:
-            limit = NBULimit(total_limit=120000, used_amount=0, month=current_month)
+            limit = NBULimit(total_limit=settings.NBU_MONTHLY_LIMIT, used_amount=0, month=current_month)
             session.add(limit)
 
         amount_uah = opp.usdt_amount * opp.buy_price
@@ -1250,15 +1656,27 @@ async def confirm_opportunity(opp_id: int):
             return {"success": False,
                     "error": f"NBU limit exceeded! Need {amount_uah:,.0f}, available {limit.total_limit - limit.used_amount:,.0f}"}
 
-        # Оновлюємо ліміт
+        # Створюємо транзакцію
+        transaction = Transaction(
+            amount_uah=amount_uah,
+            amount_usdt=opp.usdt_amount,
+            buy_merchant=opp.buy_merchant,
+            sell_merchant=opp.sell_merchant,
+            buy_price=opp.buy_price,
+            sell_price=opp.sell_price,
+            profit=opp.net_profit,
+            status='completed'
+        )
+        session.add(transaction)
+
         limit.used_amount += amount_uah
         limit.updated_at = datetime.now()
-
-        # Позначаємо можливість як опрацьовану
         opp.alert_sent = True
 
         session.commit()
-        return {"success": True}
+        db.add_log("SUCCESS", f"Opportunity #{opp_id} confirmed! Transaction #{transaction.id} created.")
+
+        return {"success": True, "transaction_id": transaction.id}
     except Exception as e:
         session.rollback()
         return {"success": False, "error": str(e)}
@@ -1284,6 +1702,8 @@ async def reject_opportunity(opp_id: int):
 
         opp.alert_sent = True
         session.commit()
+        db.add_log("INFO", f"Opportunity #{opp_id} rejected")
+
         return {"success": True}
     except Exception as e:
         session.rollback()
@@ -1323,16 +1743,6 @@ async def get_heatmap(days: int = 30, type: str = "all"):
     return db.get_heatmap_data(days=days, type=type)
 
 
-@app.get("/api/heatmap-test")
-async def test_heatmap():
-    """Тестовий ендпоінт для перевірки"""
-    try:
-        data = db.get_heatmap_data(days=30)
-        return {"success": True, "data": data}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-
 @app.post("/api/reset-nbu-limit")
 async def reset_nbu_limit():
     """Скинути ліміт НБУ (обнулити використання)"""
@@ -1355,6 +1765,7 @@ async def reset_nbu_limit():
             limit = NBULimit(total_limit=settings.NBU_MONTHLY_LIMIT, used_amount=0, month=current_month)
             session.add(limit)
         session.commit()
+        db.add_log("INFO", "NBU limit reset by user")
         return {"success": True}
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -1379,7 +1790,6 @@ async def reset_database():
             conn.execute(text("DELETE FROM sqlite_sequence"))
             conn.commit()
 
-        # Створюємо новий ліміт
         from app.nbu.limits import NBULimit
         from datetime import datetime
         from sqlalchemy.orm import sessionmaker
@@ -1393,6 +1803,7 @@ async def reset_database():
         finally:
             session.close()
 
+        db.add_log("INFO", "Database reset by user")
         return {"success": True}
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -1402,7 +1813,7 @@ async def reset_database():
 async def get_nbu_limit():
     """API для отримання ліміту НБУ"""
     return {
-        "total_limit": 120000,
+        "total_limit": settings.NBU_MONTHLY_LIMIT,
         "used_amount": nbu.get_used_amount(),
         "remaining": nbu.get_remaining_limit(),
         "usage_percent": nbu.get_usage_percent()

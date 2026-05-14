@@ -27,6 +27,8 @@ class Settings:
     MIN_COMPLETION_RATE = float(os.getenv('MIN_COMPLETION_RATE', 90))
     MIN_ORDERS_COUNT = int(os.getenv('MIN_ORDERS_COUNT', 50))
 
+    MERCHANT_ONLINE_ONLY = os.getenv('MERCHANT_ONLINE_ONLY', 'true').lower() == 'true'
+
     # NBU limit
     NBU_MONTHLY_LIMIT = float(os.getenv('NBU_MONTHLY_LIMIT', 120000))
 

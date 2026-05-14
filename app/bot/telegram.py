@@ -71,6 +71,7 @@ class TelegramNotifier:
 
 <b>🏦 ПРОДАВЕЦЬ USDT (купуємо у нього):</b>
 • Ім'я: <code>{opportunity['buy_merchant']}</code>
+• Статус: {"🟢 Онлайн" if opportunity.get('buy_status') == 'online' else "🔴 Офлайн" if opportunity.get('buy_status') == 'offline' else "⚪ Невідомо"}
 • Рейтинг: {opportunity['buy_completion_rate']:.1f}%
 • Угод: {opportunity['buy_order_count']}
 • Ліміт: {opportunity['buy_min_amount']:.0f} - {opportunity['buy_max_amount']:.0f} UAH
@@ -78,6 +79,7 @@ class TelegramNotifier:
 
 <b>🏦 ПОКУПЕЦЬ USDT (продаємо йому):</b>
 • Ім'я: <code>{opportunity['sell_merchant']}</code>
+• Статус: {"🟢 Онлайн" if opportunity.get('buy_status') == 'online' else "🔴 Офлайн" if opportunity.get('buy_status') == 'offline' else "⚪ Невідомо"}
 • Рейтинг: {opportunity['sell_completion_rate']:.1f}%
 • Угод: {opportunity['sell_order_count']}
 • Ліміт: {opportunity['sell_min_amount']:.0f} - {opportunity['sell_max_amount']:.0f} UAH

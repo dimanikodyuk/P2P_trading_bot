@@ -101,6 +101,9 @@ class ArbitrageBot:
         profit_data['allowed_min'] = allowed_min
         profit_data['allowed_max'] = allowed_max
 
+        profit_data['buy_status'] = buy_offer.get('status', 'unknown')
+        profit_data['sell_status'] = sell_offer.get('status', 'unknown')
+
         logger.info(f"📊 OPPORTUNITY DETAILS:")
         logger.info(f"   Buy from: {profit_data['buy_merchant']} (rating: {profit_data['buy_completion_rate']}%, orders: {profit_data['buy_order_count']})")
         logger.info(f"   Sell to: {profit_data['sell_merchant']} (rating: {profit_data['sell_completion_rate']}%, orders: {profit_data['sell_order_count']})")

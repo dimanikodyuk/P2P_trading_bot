@@ -21,15 +21,14 @@ class BybitP2PScanner:
         Fetch P2P quotes from Bybit
         side: '0' for buy (купити USDT), '1' for sell (продати USDT)
         """
-        # Правильний формат параметрів (як у тесті)
         payload = {
-            "userId": "",  # Пустий рядок, не None
+            "userId": "",
             "tokenId": "USDT",
             "currencyId": "UAH",
             "side": side,
-            "paymentMethod": "Monobank",  # Рядок, не список
-            "page": "1",  # Рядок
-            "size": "50"  # Рядок
+            "paymentMethod": "Monobank",
+            "page": "1",
+            "size": "50"
         }
 
         try:
@@ -47,12 +46,10 @@ class BybitP2PScanner:
 
                     data = await response.json()
 
-                    # Перевіряємо код відповіді
                     if data.get('ret_code') != 0:
                         logger.error(f"Bybit API error: {data.get('ret_msg')}")
                         return []
 
-                    # Отримуємо оголошення
                     result = data.get('result', {})
                     items = result.get('items', [])
                     total_count = result.get('count', 0)
@@ -61,11 +58,11 @@ class BybitP2PScanner:
 
                     quotes = []
                     filtered_by_limit = 0
+                    filtered_by_status = 0
 
                     for item in items:
                         merchant = item.get('merchantInfo', {})
 
-                        # Якщо merchantInfo відсутній, використовуємо дані з item
                         if not merchant:
                             merchant = {
                                 'merchantName': item.get('nickName', 'Unknown'),
@@ -78,7 +75,38 @@ class BybitP2PScanner:
                         max_amount = float(item.get('maxAmount', 0))
                         available = float(item.get('quantity', 0))
 
-                        # Фільтруємо за мінімальним рейтингом (якщо налаштовано)
+                        # ===== ПАРСИНГ СТАТУСУ =====
+                        # Перевіряємо статус мерчанта (online/offline)
+                        # Можливі варіанти: isOnline, online, status, active
+                        merchant_status = 'unknown'
+
+                        # Спроба отримати статус з різних полів
+                        if 'isOnline' in merchant:
+                            merchant_status = 'online' if merchant.get('isOnline') else 'offline'
+                        elif 'online' in merchant:
+                            merchant_status = 'online' if merchant.get('online') else 'offline'
+                        elif 'status' in merchant:
+                            merchant_status = merchant.get('status', 'unknown')
+                            if merchant_status == '1' or merchant_status == 'online':
+                                merchant_status = 'online'
+                            elif merchant_status == '0' or merchant_status == 'offline':
+                                merchant_status = 'offline'
+                        elif 'isActive' in merchant:
+                            merchant_status = 'online' if merchant.get('isActive') else 'offline'
+
+                        # Також перевіряємо в основних полях item
+                        if merchant_status == 'unknown':
+                            if 'isOnline' in item:
+                                merchant_status = 'online' if item.get('isOnline') else 'offline'
+                            elif 'online' in item:
+                                merchant_status = 'online' if item.get('online') else 'offline'
+
+                        # Фільтр за статусом (якщо налаштовано)
+                        if settings.MERCHANT_ONLINE_ONLY:
+                            if merchant_status != 'online':
+                                filtered_by_status += 1
+                                continue
+
                         completion_rate = float(merchant.get('completionRate', 0))
                         order_count = int(merchant.get('totalOrderCount', 0))
 
@@ -90,14 +118,11 @@ class BybitP2PScanner:
                             if order_count < settings.MIN_ORDERS_COUNT:
                                 continue
 
-                        # ===== НОВИЙ ФІЛЬТР: перевіряємо ліміт мерчанта =====
-                        # Перевіряємо чи мерчант може працювати з нашою мінімальною сумою
                         if settings.MIN_DEAL_AMOUNT > 0:
                             if max_amount < settings.MIN_DEAL_AMOUNT:
                                 filtered_by_limit += 1
                                 continue
 
-                        # Також перевіряємо чи мінімальний ліміт мерчанта не більший за наш капітал
                         if min_amount > settings.STARTING_CAPITAL:
                             filtered_by_limit += 1
                             continue
@@ -109,25 +134,28 @@ class BybitP2PScanner:
                             'available': available,
                             'merchant_name': merchant.get('merchantName', 'Unknown'),
                             'completion_rate': completion_rate,
-                            'order_count': order_count
+                            'order_count': order_count,
+                            'status': merchant_status  # Додаємо статус
                         }
                         quotes.append(quote)
 
-                    # Сортуємо за ціною
-                    if side == '0':  # Buy - найнижча ціна
+                    if side == '0':
                         quotes.sort(key=lambda x: x['price'])
-                    else:  # Sell - найвища ціна
+                    else:
                         quotes.sort(key=lambda x: x['price'], reverse=True)
 
                     logger.info(
-                        f"Filtered to {len(quotes)} offers for side {side} (skipped {filtered_by_limit} due to low limit < {settings.MIN_DEAL_AMOUNT} UAH)")
+                        f"Filtered to {len(quotes)} offers for side {side} "
+                        f"(skipped {filtered_by_limit} by limit, {filtered_by_status} by status)")
 
-                    # Логуємо топ-5 пропозицій з їх лімітами
                     if quotes:
                         logger.info(f"Top 5 offers for side {side}:")
                         for i, q in enumerate(quotes[:5]):
+                            status_emoji = "🟢" if q['status'] == 'online' else (
+                                "🔴" if q['status'] == 'offline' else "⚪")
                             logger.info(
-                                f"   {i + 1}. {q['merchant_name']}: {q['price']} UAH (limit: {q['min_amount']:.0f}-{q['max_amount']:.0f} UAH)")
+                                f"   {i + 1}. {status_emoji} {q['merchant_name']}: {q['price']} UAH "
+                                f"(limit: {q['min_amount']:.0f}-{q['max_amount']:.0f} UAH, status: {q['status']})")
 
                     return quotes
 
@@ -143,10 +171,7 @@ class BybitP2PScanner:
 
     async def get_best_offers(self):
         """Get best buy and sell offers"""
-        # Отримуємо пропозиції на купівлю (найнижча ціна)
         buy_offers = await self.fetch_quotes('0')
-
-        # Отримуємо пропозиції на продаж (найвища ціна)
         sell_offers = await self.fetch_quotes('1')
 
         if not buy_offers:
@@ -157,15 +182,20 @@ class BybitP2PScanner:
             logger.warning("No sell offers found (all filtered out due to limits?)")
             return None, None
 
-        # Найкраща пропозиція для купівлі (найнижча ціна)
         best_buy = buy_offers[0]
-
-        # Найкраща пропозиція для продажу (найвища ціна)
         best_sell = sell_offers[0]
 
+        status_buy_emoji = "🟢" if best_buy['status'] == 'online' else ("🔴" if best_buy['status'] == 'offline' else "⚪")
+        status_sell_emoji = "🟢" if best_sell['status'] == 'online' else (
+            "🔴" if best_sell['status'] == 'offline' else "⚪")
+
         logger.info(
-            f"📈 Best BUY: {best_buy['price']} UAH from {best_buy['merchant_name']} (limit: {best_buy['min_amount']:.0f}-{best_buy['max_amount']:.0f} UAH, rating: {best_buy['completion_rate']}%, orders: {best_buy['order_count']})")
+            f"📈 Best BUY: {status_buy_emoji} {best_buy['price']} UAH from {best_buy['merchant_name']} "
+            f"(limit: {best_buy['min_amount']:.0f}-{best_buy['max_amount']:.0f} UAH, "
+            f"rating: {best_buy['completion_rate']}%, orders: {best_buy['order_count']}, status: {best_buy['status']})")
         logger.info(
-            f"📉 Best SELL: {best_sell['price']} UAH from {best_sell['merchant_name']} (limit: {best_sell['min_amount']:.0f}-{best_sell['max_amount']:.0f} UAH, rating: {best_sell['completion_rate']}%, orders: {best_sell['order_count']})")
+            f"📉 Best SELL: {status_sell_emoji} {best_sell['price']} UAH from {best_sell['merchant_name']} "
+            f"(limit: {best_sell['min_amount']:.0f}-{best_sell['max_amount']:.0f} UAH, "
+            f"rating: {best_sell['completion_rate']}%, orders: {best_sell['order_count']}, status: {best_sell['status']})")
 
         return best_buy, best_sell

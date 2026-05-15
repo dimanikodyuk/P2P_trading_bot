@@ -76,7 +76,6 @@ def reset_database():
             return True
     return False
 
-
 if __name__ == "__main__":
     print("=" * 50)
     print("🏦 Міграція бази даних P2P Arbitrage Bot")

@@ -1732,7 +1732,16 @@ async def get_pending_opportunities(limit: int = 100):
                 "sell_price": o.sell_price,
                 "usdt_amount": o.usdt_amount,
                 "buy_merchant": getattr(o, 'buy_merchant', 'Unknown'),
-                "sell_merchant": getattr(o, 'sell_merchant', 'Unknown')
+                "sell_merchant": getattr(o, 'sell_merchant', 'Unknown'),
+                # НОВІ ПОЛЯ
+                "buy_min_amount": getattr(o, 'buy_min_amount', 0),
+                "buy_max_amount": getattr(o, 'buy_max_amount', 0),
+                "sell_min_amount": getattr(o, 'sell_min_amount', 0),
+                "sell_max_amount": getattr(o, 'sell_max_amount', 0),
+                "buy_status": getattr(o, 'buy_status', 'unknown'),
+                "sell_status": getattr(o, 'sell_status', 'unknown'),
+                "buy_is_recommended": getattr(o, 'buy_is_recommended', False),
+                "sell_is_recommended": getattr(o, 'sell_is_recommended', False)
             }
             for o in opportunities
         ]

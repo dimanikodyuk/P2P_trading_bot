@@ -126,12 +126,86 @@ HTML_PAGE = """
             flex-wrap: wrap;
             gap: 15px;
         }
+        /* Стилі для сум */
+.amount-paid {
+    color: #f44336;
+    font-weight: bold;
+}
 
+.amount-received {
+    color: #4caf50;
+    font-weight: bold;
+}
+
+.profit-amount {
+    color: #4caf50;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.limits-cell {
+    font-size: 11px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.merchant-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.merchant-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.merchant-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    display: inline-block;
+}
+
+.badge-online {
+    background: #e8f5e9;
+    color: #4caf50;
+}
+
+.badge-offline {
+    background: #ffebee;
+    color: #f44336;
+}
+
+.badge-recommended {
+    background: #fff3e0;
+    color: #ff9800;
+}
+
+.badge-iban {
+    background: #e8eaf6;
+    color: #3f51b5;
+}
+
+.spread-high {
+    color: #ff9800;
+    font-weight: bold;
+}
+
+.profit-positive {
+    color: #4caf50;
+}
         .header h1 {
             color: #333;
             font-size: 28px;
         }
-
+        
         .header h1 span {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
@@ -775,19 +849,20 @@ HTML_PAGE = """
                     <thead>
                         <tr>
                             <th>⏰ Час</th>
-                            <th>📈 Купівля</th>
-                            <th>📉 Продаж</th>
+                            <th>📈 Купівля (USDT)</th>
+                            <th>📉 Продаж (USDT)</th>
                             <th>💰 Спред</th>
-                            <th>💸 Прибуток</th>
+                            <th>💸 ПОТРІБНО ЗАПЛАТИТИ</th>
+                            <th>💵 ОТРИМАЄТЕ</th>
+                            <th>💚 ПРИБУТОК</th>
                             <th>📊 ROI</th>
-                            <th>🏦 Продавець USDT</th>
-                            <th>🏦 Покупець USDT</th>
-                            <th>📋 Ліміти</th>
+                            <th>🏦 ПРОДАВЕЦЬ USDT</th>
+                            <th>🏦 ПОКУПЕЦЬ USDT</th>
                             <th>Дія</th>
                         </tr>
                     </thead>
                     <tbody id="opportunities-body">
-                        <tr><td colspan="10" class="loading">🔄 Завантаження......</td></tr>
+                        <tr><td colspan="11" class="loading">🔄 Завантаження......</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1372,25 +1447,31 @@ HTML_PAGE = """
         function updateTable(opps) {
     const tbody = document.getElementById('opportunities-body');
     if (!opps || opps.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="loading">📭 Немає можливостей, що очікують підтвердження</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="12" class="loading">📭 Немає можливостей, що очікують підтвердження</td></tr>';
         return;
     }
     tbody.innerHTML = opps.map(o => {
-        const buyAmount = o.usdt_amount ? o.usdt_amount * o.buy_price : 0;
-        const sellAmount = o.usdt_amount ? o.usdt_amount * o.sell_price : 0;
+        // Розрахунок сум в гривнях
+        const buyAmountUAH = o.usdt_amount ? o.usdt_amount * o.buy_price : 0;
+        const sellAmountUAH = o.usdt_amount ? o.usdt_amount * o.sell_price : 0;
+        const profitUAH = o.profit || 0;
         const spreadClass = o.spread >= 0.7 ? 'spread-high' : '';
+        
+        // Статуси мерчантів
         const buyStatus = o.buy_status || 'unknown';
         const sellStatus = o.sell_status || 'unknown';
         const buyOnline = buyStatus === 'online' ? '<span class="badge badge-online">🟢 Онлайн</span>' : '<span class="badge badge-offline">🔴 Офлайн</span>';
         const sellOnline = sellStatus === 'online' ? '<span class="badge badge-online">🟢 Онлайн</span>' : '<span class="badge badge-offline">🔴 Офлайн</span>';
-        const ibanBadge = '<span class="badge badge-iban">🏦 Monobank (IBAN)</span>';
+        const ibanBadge = '<span class="badge badge-iban">🏦 Monobank</span>';
         
         return `<tr>
             <td>${new Date(o.timestamp).toLocaleString('uk-UA')}</td>
             <td>${formatNumber(o.buy_price)} UAH</td>
             <td>${formatNumber(o.sell_price)} UAH</td>
             <td class="${spreadClass}">${formatNumber(o.spread, 2)}%</td>
-            <td class="profit-positive">${formatProfit(o.profit)} UAH</td>
+            <td class="profit-positive"><strong>${formatNumber(buyAmountUAH, 0)} грн</strong><br><small style="color:#666">(потрібно заплатити)</small></td>
+            <td class="profit-positive"><strong>${formatNumber(sellAmountUAH, 0)} грн</strong><br><small style="color:#666">(отримаєте)</small></td>
+            <td class="profit-positive"><strong>${formatProfit(profitUAH)} грн</strong><br><small style="color:#666">(чистий прибуток)</small></td>
             <td>${formatNumber(o.roi, 2)}%</td>
             <td>
                 <div class="merchant-cell">
@@ -1399,6 +1480,9 @@ HTML_PAGE = """
                         ${buyOnline}
                         ${ibanBadge}
                         ${o.buy_is_recommended ? '<span class="badge badge-recommended">⭐ Рекомендовано</span>' : ''}
+                    </div>
+                    <div class="limits-cell" style="font-size: 11px; margin-top: 5px;">
+                        📋 ${formatNumber(o.buy_min_amount, 0)}-${formatNumber(o.buy_max_amount, 0)} UAH
                     </div>
                 </div>
             </td>
@@ -1410,14 +1494,13 @@ HTML_PAGE = """
                         ${ibanBadge}
                         ${o.sell_is_recommended ? '<span class="badge badge-recommended">⭐ Рекомендовано</span>' : ''}
                     </div>
+                    <div class="limits-cell" style="font-size: 11px; margin-top: 5px;">
+                        📋 ${formatNumber(o.sell_min_amount, 0)}-${formatNumber(o.sell_max_amount, 0)} UAH
+                    </div>
                 </div>
             </td>
-            <td class="limits-cell">
-                📋 ${formatNumber(o.buy_min_amount, 0)}-${formatNumber(o.buy_max_amount, 0)} UAH<br>
-                💰 Доступно: ${o.buy_available?.toFixed(0) || 0} USDT
-            </td>
             <td>
-                <button class="btn-success" onclick="confirmOpportunity(${o.id}, ${buyAmount}, ${sellAmount}, ${o.profit}, '${o.buy_merchant}', '${o.sell_merchant}')">✅ Підтвердити</button>
+                <button class="btn-success" onclick="confirmOpportunity(${o.id}, ${buyAmountUAH}, ${sellAmountUAH}, ${profitUAH}, '${o.buy_merchant}', '${o.sell_merchant}')">✅ Підтвердити</button>
                 <button class="btn-danger" onclick="rejectOpportunity(${o.id})">❌ Відхилити</button>
             </td>
         </tr>`;

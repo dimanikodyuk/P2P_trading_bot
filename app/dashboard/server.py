@@ -874,6 +874,7 @@ HTML_PAGE = """
                     <div class="controls">
                         <label>Показати: 
                             <select id="completed-limit" onchange="loadCompletedDeals()">
+                                <option value="10">10</option>
                                 <option value="50">50</option>
                                 <option value="100" selected>100</option>
                                 <option value="200">200</option>
@@ -913,6 +914,7 @@ HTML_PAGE = """
                     <div class="controls">
                         <label>Показати: 
                             <select id="rejected-limit" onchange="loadRejectedDeals()">
+                                <option value="10">10</option>
                                 <option value="50">50</option>
                                 <option value="100" selected>100</option>
                                 <option value="200">200</option>
@@ -950,6 +952,7 @@ HTML_PAGE = """
                     <div class="controls">
                         <label>Показати: 
                             <select id="logs-limit" onchange="loadLogs()">
+                                <option value="10">10</option>
                                 <option value="50">50</option>
                                 <option value="100" selected>100</option>
                                 <option value="200">200</option>

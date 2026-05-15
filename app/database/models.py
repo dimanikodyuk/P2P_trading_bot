@@ -48,6 +48,10 @@ class Opportunity(Base):
     sell_min_amount = Column(Float, default=0)
     sell_max_amount = Column(Float, default=0)
     sell_available = Column(Float, default=0)
+    buy_status = Column(String, default='unknown')
+    sell_status = Column(String, default='unknown')
+    buy_is_recommended = Column(Boolean, default=False)
+    sell_is_recommended = Column(Boolean, default=False)
 
 
 class Log(Base):

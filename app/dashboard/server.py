@@ -192,7 +192,7 @@ HTML_PAGE = """
         .heatmap-controls {
             margin-bottom: 15px;
         }
-
+            
         .heatmap-controls select {
             padding: 5px 10px;
             border-radius: 5px;
@@ -201,7 +201,71 @@ HTML_PAGE = """
             cursor: pointer;
             margin-left: 10px;
         }
+        
+        /* Бейджі та покращення таблиці */
+.merchant-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
 
+.merchant-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.merchant-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    display: inline-block;
+}
+
+.badge-online {
+    background: #e8f5e9;
+    color: #4caf50;
+}
+
+.badge-offline {
+    background: #ffebee;
+    color: #f44336;
+}
+
+.badge-recommended {
+    background: #fff3e0;
+    color: #ff9800;
+}
+
+.badge-payment {
+    background: #e3f2fd;
+    color: #2196f3;
+}
+
+.badge-iban {
+    background: #e8eaf6;
+    color: #3f51b5;
+}
+
+.limits-cell {
+    font-size: 12px;
+    color: #666;
+}
+
+.profit-positive {
+    color: #4caf50;
+    font-weight: bold;
+}
+
+.spread-high {
+    color: #ff9800;
+    font-weight: bold;
+}
         .legend-gradient {
             display: inline-block;
             width: 200px;
@@ -702,31 +766,32 @@ HTML_PAGE = """
             </div>
 
             <div class="opportunities-section">
-                <div class="opportunities-header">
-                    <h2>🔔 Останні можливості (очікують підтвердження)</h2>
-                    <button class="btn-danger" onclick="rejectAllOpportunities()" style="padding: 8px 16px;">❌ Відхилити всі</button>
-                </div>
-                <div class="table-container">
-                    <table id="opportunities-table">
-                        <thead>
-                            <tr>
-                                <th>⏰ Час</th>
-                                <th>💵 Купівля</th>
-                                <th>💰 Продаж</th>
-                                <th>📈 Спред</th>
-                                <th>💸 Сума купівлі</th>
-                                <th>💵 Сума продажу</th>
-                                <th>💚 Прибуток</th>
-                                <th>📊 ROI</th>
-                                <th>Дія</th>
-                            </tr>
-                        </thead>
-                        <tbody id="opportunities-body">
-                            <tr><td colspan="9" class="loading">🔄 Завантаження......</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="opportunities-header">
+                <h2>🔔 Останні можливості (очікують підтвердження)</h2>
+                <button class="btn-danger" onclick="rejectAllOpportunities()" style="padding: 8px 16px;">❌ Відхилити всі</button>
             </div>
+            <div class="table-container">
+                <table id="opportunities-table">
+                    <thead>
+                        <tr>
+                            <th>⏰ Час</th>
+                            <th>📈 Купівля</th>
+                            <th>📉 Продаж</th>
+                            <th>💰 Спред</th>
+                            <th>💸 Прибуток</th>
+                            <th>📊 ROI</th>
+                            <th>🏦 Продавець USDT</th>
+                            <th>🏦 Покупець USDT</th>
+                            <th>📋 Ліміти</th>
+                            <th>Дія</th>
+                        </tr>
+                    </thead>
+                    <tbody id="opportunities-body">
+                        <tr><td colspan="10" class="loading">🔄 Завантаження......</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
             <div class="opportunities-section">
                 <div class="opportunities-header">
@@ -1305,30 +1370,59 @@ HTML_PAGE = """
         }
 
         function updateTable(opps) {
-            const tbody = document.getElementById('opportunities-body');
-            if (!opps || opps.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="loading">📭 Немає можливостей, що очікують підтвердження</td></tr>';
-                return;
-            }
-            tbody.innerHTML = opps.map(o => {
-                const buyAmount = o.usdt_amount ? o.usdt_amount * o.buy_price : 0;
-                const sellAmount = o.usdt_amount ? o.usdt_amount * o.sell_price : 0;
-                return `<tr>
-                    <td>${new Date(o.timestamp).toLocaleString('uk-UA')}</td>
-                    <td>${formatNumber(o.buy_price)} UAH</td>
-                    <td>${formatNumber(o.sell_price)} UAH</td>
-                    <td>${formatNumber(o.spread, 2)}%</td>
-                    <td class="profit-positive">${formatNumber(buyAmount, 0)} грн</td>
-                    <td class="profit-positive">${formatNumber(sellAmount, 0)} грн</td>
-                    <td class="profit-positive">${formatProfit(o.profit)} UAH</td>
-                    <td>${formatNumber(o.roi, 2)}%</td>
-                    <td>
-                        <button class="btn-success" onclick="confirmOpportunity(${o.id}, ${buyAmount}, ${sellAmount}, ${o.profit}, '${o.buy_merchant}', '${o.sell_merchant}')">✅ Підтвердити</button>
-                        <button class="btn-danger" onclick="rejectOpportunity(${o.id})">❌ Відхилити</button>
-                     </td>
-                </tr>`;
-            }).join('');
-        }
+    const tbody = document.getElementById('opportunities-body');
+    if (!opps || opps.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="loading">📭 Немає можливостей, що очікують підтвердження</td></tr>';
+        return;
+    }
+    tbody.innerHTML = opps.map(o => {
+        const buyAmount = o.usdt_amount ? o.usdt_amount * o.buy_price : 0;
+        const sellAmount = o.usdt_amount ? o.usdt_amount * o.sell_price : 0;
+        const spreadClass = o.spread >= 0.7 ? 'spread-high' : '';
+        const buyStatus = o.buy_status || 'unknown';
+        const sellStatus = o.sell_status || 'unknown';
+        const buyOnline = buyStatus === 'online' ? '<span class="badge badge-online">🟢 Онлайн</span>' : '<span class="badge badge-offline">🔴 Офлайн</span>';
+        const sellOnline = sellStatus === 'online' ? '<span class="badge badge-online">🟢 Онлайн</span>' : '<span class="badge badge-offline">🔴 Офлайн</span>';
+        const ibanBadge = '<span class="badge badge-iban">🏦 Monobank (IBAN)</span>';
+        
+        return `<tr>
+            <td>${new Date(o.timestamp).toLocaleString('uk-UA')}</td>
+            <td>${formatNumber(o.buy_price)} UAH</td>
+            <td>${formatNumber(o.sell_price)} UAH</td>
+            <td class="${spreadClass}">${formatNumber(o.spread, 2)}%</td>
+            <td class="profit-positive">${formatProfit(o.profit)} UAH</td>
+            <td>${formatNumber(o.roi, 2)}%</td>
+            <td>
+                <div class="merchant-cell">
+                    <span class="merchant-name">${o.buy_merchant}</span>
+                    <div class="merchant-badges">
+                        ${buyOnline}
+                        ${ibanBadge}
+                        ${o.buy_is_recommended ? '<span class="badge badge-recommended">⭐ Рекомендовано</span>' : ''}
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div class="merchant-cell">
+                    <span class="merchant-name">${o.sell_merchant}</span>
+                    <div class="merchant-badges">
+                        ${sellOnline}
+                        ${ibanBadge}
+                        ${o.sell_is_recommended ? '<span class="badge badge-recommended">⭐ Рекомендовано</span>' : ''}
+                    </div>
+                </div>
+            </td>
+            <td class="limits-cell">
+                📋 ${formatNumber(o.buy_min_amount, 0)}-${formatNumber(o.buy_max_amount, 0)} UAH<br>
+                💰 Доступно: ${o.buy_available?.toFixed(0) || 0} USDT
+            </td>
+            <td>
+                <button class="btn-success" onclick="confirmOpportunity(${o.id}, ${buyAmount}, ${sellAmount}, ${o.profit}, '${o.buy_merchant}', '${o.sell_merchant}')">✅ Підтвердити</button>
+                <button class="btn-danger" onclick="rejectOpportunity(${o.id})">❌ Відхилити</button>
+            </td>
+        </tr>`;
+    }).join('');
+}
 
         function updateCharts(opps) {
             if (!opps || opps.length === 0) return;

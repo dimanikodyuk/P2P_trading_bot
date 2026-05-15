@@ -63,7 +63,11 @@ class DatabaseManager:
                 buy_available=profit_data.get('buy_available', 0),
                 sell_min_amount=profit_data.get('sell_min_amount', 0),
                 sell_max_amount=profit_data.get('sell_max_amount', 0),
-                sell_available=profit_data.get('sell_available', 0)
+                sell_available=profit_data.get('sell_available', 0),
+                buy_status=profit_data.get('buy_status', 'unknown'),
+                sell_status=profit_data.get('sell_status', 'unknown'),
+                buy_is_recommended=profit_data.get('buy_is_recommended', False),
+                sell_is_recommended=profit_data.get('sell_is_recommended', False)
             )
             session.add(opp)
             session.commit()

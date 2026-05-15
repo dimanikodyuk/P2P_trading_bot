@@ -103,6 +103,8 @@ class ArbitrageBot:
 
         profit_data['buy_status'] = buy_offer.get('status', 'unknown')
         profit_data['sell_status'] = sell_offer.get('status', 'unknown')
+        profit_data['buy_is_recommended'] = buy_offer.get('is_recommended', False)
+        profit_data['sell_is_recommended'] = sell_offer.get('is_recommended', False)
 
         logger.info(f"📊 OPPORTUNITY DETAILS:")
         logger.info(f"   Buy from: {profit_data['buy_merchant']} (rating: {profit_data['buy_completion_rate']}%, orders: {profit_data['buy_order_count']})")

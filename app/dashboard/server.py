@@ -126,86 +126,131 @@ HTML_PAGE = """
             flex-wrap: wrap;
             gap: 15px;
         }
-        /* Стилі для сум */
-.amount-paid {
-    color: #f44336;
-    font-weight: bold;
-}
 
-.amount-received {
-    color: #4caf50;
-    font-weight: bold;
-}
+        /* Стилі для топ угод */
+        .top-first td {
+            background: linear-gradient(90deg, #fff3e0, white);
+        }
 
-.profit-amount {
-    color: #4caf50;
-    font-weight: bold;
-    font-size: 16px;
-}
+        .top-first .profit-positive {
+            color: #ff9800;
+            font-size: 16px;
+        }
 
-.limits-cell {
-    font-size: 11px;
-    color: #666;
-    margin-top: 5px;
-}
+        .top-second td {
+            background: #f5f5f5;
+        }
 
-.merchant-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
+        .top-third td {
+            background: #fafafa;
+        }
 
-.merchant-name {
-    font-weight: 600;
-    color: #333;
-}
+        .rank-badge {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            line-height: 32px;
+            text-align: center;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 16px;
+        }
 
-.merchant-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-}
+        .rank-1 {
+            background: linear-gradient(135deg, #ffd700, #ffb300);
+            color: white;
+        }
 
-.badge {
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 10px;
-    display: inline-block;
-}
+        .rank-2 {
+            background: linear-gradient(135deg, #c0c0c0, #a0a0a0);
+            color: white;
+        }
 
-.badge-online {
-    background: #e8f5e9;
-    color: #4caf50;
-}
+        .rank-3 {
+            background: linear-gradient(135deg, #cd7f32, #b8860b);
+            color: white;
+        }
 
-.badge-offline {
-    background: #ffebee;
-    color: #f44336;
-}
+        .amount-paid {
+            color: #f44336;
+            font-weight: bold;
+        }
 
-.badge-recommended {
-    background: #fff3e0;
-    color: #ff9800;
-}
+        .amount-received {
+            color: #4caf50;
+            font-weight: bold;
+        }
 
-.badge-iban {
-    background: #e8eaf6;
-    color: #3f51b5;
-}
+        .profit-amount {
+            color: #4caf50;
+            font-weight: bold;
+            font-size: 16px;
+        }
 
-.spread-high {
-    color: #ff9800;
-    font-weight: bold;
-}
+        .limits-cell {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+        }
 
-.profit-positive {
-    color: #4caf50;
-}
+        .merchant-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .merchant-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .merchant-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .badge-online {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+
+        .badge-offline {
+            background: #ffebee;
+            color: #f44336;
+        }
+
+        .badge-recommended {
+            background: #fff3e0;
+            color: #ff9800;
+        }
+
+        .badge-iban {
+            background: #e8eaf6;
+            color: #3f51b5;
+        }
+
+        .spread-high {
+            color: #ff9800;
+            font-weight: bold;
+        }
+
+        .profit-positive {
+            color: #4caf50;
+        }
+
         .header h1 {
             color: #333;
             font-size: 28px;
         }
-        
+
         .header h1 span {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
@@ -266,7 +311,7 @@ HTML_PAGE = """
         .heatmap-controls {
             margin-bottom: 15px;
         }
-            
+
         .heatmap-controls select {
             padding: 5px 10px;
             border-radius: 5px;
@@ -275,71 +320,7 @@ HTML_PAGE = """
             cursor: pointer;
             margin-left: 10px;
         }
-        
-        /* Бейджі та покращення таблиці */
-.merchant-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
 
-.merchant-name {
-    font-weight: 600;
-    color: #333;
-}
-
-.merchant-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-}
-
-.badge {
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 10px;
-    display: inline-block;
-}
-
-.badge-online {
-    background: #e8f5e9;
-    color: #4caf50;
-}
-
-.badge-offline {
-    background: #ffebee;
-    color: #f44336;
-}
-
-.badge-recommended {
-    background: #fff3e0;
-    color: #ff9800;
-}
-
-.badge-payment {
-    background: #e3f2fd;
-    color: #2196f3;
-}
-
-.badge-iban {
-    background: #e8eaf6;
-    color: #3f51b5;
-}
-
-.limits-cell {
-    font-size: 12px;
-    color: #666;
-}
-
-.profit-positive {
-    color: #4caf50;
-    font-weight: bold;
-}
-
-.spread-high {
-    color: #ff9800;
-    font-weight: bold;
-}
         .legend-gradient {
             display: inline-block;
             width: 200px;
@@ -840,33 +821,78 @@ HTML_PAGE = """
             </div>
 
             <div class="opportunities-section">
-            <div class="opportunities-header">
-                <h2>🔔 Останні можливості (очікують підтвердження)</h2>
-                <button class="btn-danger" onclick="rejectAllOpportunities()" style="padding: 8px 16px;">❌ Відхилити всі</button>
+                <div class="opportunities-header">
+                    <h2>🔔 Останні можливості (очікують підтвердження)</h2>
+                    <button class="btn-danger" onclick="rejectAllOpportunities()" style="padding: 8px 16px;">❌ Відхилити всі</button>
+                </div>
+                <div class="table-container">
+                    <table id="opportunities-table">
+                        <thead>
+                            <tr>
+                                <th>⏰ Час</th>
+                                <th>📈 Купівля (USDT)</th>
+                                <th>📉 Продаж (USDT)</th>
+                                <th>💰 Спред</th>
+                                <th>💸 ПОТРІБНО ЗАПЛАТИТИ</th>
+                                <th>💵 ОТРИМАЄТЕ</th>
+                                <th>💚 ПРИБУТОК</th>
+                                <th>📊 ROI</th>
+                                <th>🏦 ПРОДАВЕЦЬ USDT</th>
+                                <th>🏦 ПОКУПЕЦЬ USDT</th>
+                                <th>Дія</th>
+                            </tr>
+                        </thead>
+                        <tbody id="opportunities-body">
+                            <tr><td colspan="11" class="loading">🔄 Завантаження......</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="table-container">
-                <table id="opportunities-table">
-                    <thead>
-                        <tr>
-                            <th>⏰ Час</th>
-                            <th>📈 Купівля (USDT)</th>
-                            <th>📉 Продаж (USDT)</th>
-                            <th>💰 Спред</th>
-                            <th>💸 ПОТРІБНО ЗАПЛАТИТИ</th>
-                            <th>💵 ОТРИМАЄТЕ</th>
-                            <th>💚 ПРИБУТОК</th>
-                            <th>📊 ROI</th>
-                            <th>🏦 ПРОДАВЕЦЬ USDT</th>
-                            <th>🏦 ПОКУПЕЦЬ USDT</th>
-                            <th>Дія</th>
-                        </tr>
-                    </thead>
-                    <tbody id="opportunities-body">
-                        <tr><td colspan="11" class="loading">🔄 Завантаження......</td></tr>
-                    </tbody>
-                </table>
+
+            <div class="opportunities-section">
+                <div class="opportunities-header">
+                    <h2>🏆 Топ можливостей за весь час</h2>
+                    <div class="controls">
+                        <label>Сортувати за: 
+                            <select id="top-sort" onchange="loadTopOpportunities()">
+                                <option value="profit">💸 Прибуток</option>
+                                <option value="spread">📈 Спред</option>
+                                <option value="roi">📊 ROI</option>
+                            </select>
+                        </label>
+                        <label>Показати: 
+                            <select id="top-limit" onchange="loadTopOpportunities()">
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50" selected>50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="top-opportunities-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>⏰ Час</th>
+                                <th>💵 Купівля</th>
+                                <th>💰 Продаж</th>
+                                <th>📈 Спред</th>
+                                <th>💸 Сума купівлі</th>
+                                <th>💵 Сума продажу</th>
+                                <th>💚 Прибуток</th>
+                                <th>📊 ROI</th>
+                                <th>👤 Продавець</th>
+                                <th>👤 Покупець</th>
+                            </tr>
+                        </thead>
+                        <tbody id="top-opportunities-body">
+                            <tr><td colspan="11" class="loading">Завантаження...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
 
             <div class="opportunities-section">
                 <div class="opportunities-header">
@@ -984,26 +1010,29 @@ HTML_PAGE = """
                 <form id="settings-form">
                     <div class="settings-group">
                         <h3>🤖 Telegram бот</h3>
-                            <div class="setting-row">
-                                <div class="setting-label">
-                                    TELEGRAM_BOT_TOKEN
-                                    <small>Токен бота (отримати у @BotFather)</small>
-                                </div>
-                                <div class="setting-input">
-                                    <input type="text" id="TELEGRAM_BOT_TOKEN" placeholder="1234567890:ABCdefGHIjklmNOPqrstUVwxyz">
-                                    <div class="current-value" id="current-telegram-token">Поточне: не встановлено</div>
-                                </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                TELEGRAM_BOT_TOKEN
+                                <small>Токен бота (отримати у @BotFather)</small>
                             </div>
-                            <div class="setting-row">
-                                <div class="setting-label">
-                                    TELEGRAM_CHAT_ID
-                                    <small>ID чату (можна отримати у @userinfobot)</small>
-                                </div>
-                                <div class="setting-input">
-                                    <input type="text" id="TELEGRAM_CHAT_ID" placeholder="123456789">
-                                    <div class="current-value" id="current-telegram-chat">Поточне: не встановлено</div>
-                                </div>
+                            <div class="setting-input">
+                                <input type="text" id="TELEGRAM_BOT_TOKEN" placeholder="1234567890:ABCdefGHIjklmNOPqrstUVwxyz">
+                                <div class="current-value" id="current-telegram-token">Поточне: не встановлено</div>
                             </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                TELEGRAM_CHAT_ID
+                                <small>ID чату (можна отримати у @userinfobot)</small>
+                            </div>
+                            <div class="setting-input">
+                                <input type="text" id="TELEGRAM_CHAT_ID" placeholder="123456789">
+                                <div class="current-value" id="current-telegram-chat">Поточне: не встановлено</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
                         <h3>💰 Торгові параметри</h3>
                         <div class="setting-row">
                             <div class="setting-label">
@@ -1148,7 +1177,6 @@ HTML_PAGE = """
         function showTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-
             document.getElementById(`${tabName}-tab`).classList.add('active');
             event.target.classList.add('active');
         }
@@ -1185,7 +1213,6 @@ HTML_PAGE = """
                 NBU_MONTHLY_LIMIT: parseFloat(document.getElementById('NBU_MONTHLY_LIMIT').value),
                 COOLDOWN_SECONDS: parseInt(document.getElementById('COOLDOWN_SECONDS').value)
             };
-
             try {
                 const resp = await fetch('/api/settings', {
                     method: 'POST',
@@ -1194,9 +1221,6 @@ HTML_PAGE = """
                 });
                 const data = await resp.json();
                 if (data.success) {
-                    const msg = document.getElementById('settings-message');
-                    msg.style.display = 'block';
-                    setTimeout(() => msg.style.display = 'none', 3000);
                     alert('✅ Налаштування збережено! Бот перезапуститься автоматично.');
                     setTimeout(() => location.reload(), 2000);
                 } else {
@@ -1255,14 +1279,12 @@ HTML_PAGE = """
             try {
                 const resp = await fetch(`/api/heatmap?days=${days}&type=${type}`);
                 const data = await resp.json();
-
                 const colorscale = [
                     [0, '#90be6d'],
                     [0.33, '#f9c74f'],
                     [0.66, '#f9844a'],
                     [1, '#f44336']
                 ];
-
                 const trace = {
                     z: data.data,
                     x: data.hours,
@@ -1275,7 +1297,6 @@ HTML_PAGE = """
                     hovertemplate: '<b>%{y}</b> %{x}:00<br>Середній прибуток: <b>%{z:.0f} грн</b><br><extra></extra>',
                     texttemplate: '%{text}'
                 };
-
                 const layout = {
                     title: { text: `Середній прибуток по годинах (останні ${days} днів)`, font: { size: 14 } },
                     xaxis: { title: 'Година дня', tickmode: 'linear', tick0: 0, dtick: 2, tickangle: 0 },
@@ -1284,13 +1305,11 @@ HTML_PAGE = """
                     margin: { l: 60, r: 40, t: 50, b: 40 },
                     hoverlabel: { bgcolor: 'white', font: { size: 12, color: '#333' } }
                 };
-
                 if (heatmapChart) {
                     Plotly.react('heatmap-chart', [trace], layout);
                 } else {
                     heatmapChart = Plotly.newPlot('heatmap-chart', [trace], layout);
                 }
-
                 updateHeatmapStats(data);
             } catch(e) { console.error(e); }
         }
@@ -1319,6 +1338,65 @@ HTML_PAGE = """
             } else {
                 statsDiv.innerHTML = `<strong>📈 Немає даних за вибраний період</strong>`;
             }
+        }
+
+        async function loadTopOpportunities() {
+            const limit = document.getElementById('top-limit').value;
+            const sortBy = document.getElementById('top-sort').value;
+            try {
+                const resp = await fetch(`/api/top-opportunities?limit=${limit}&sort_by=${sortBy}`);
+                const opps = await resp.json();
+                const tbody = document.getElementById('top-opportunities-body');
+                if (!opps || opps.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="11" class="loading">📭 Немає даних</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = opps.map((o, index) => {
+                    const buyAmount = o.usdt_amount ? o.usdt_amount * o.buy_price : 0;
+                    const sellAmount = o.usdt_amount ? o.usdt_amount * o.sell_price : 0;
+                    let rankClass = '';
+                    let rankHtml = '';
+                    if (index === 0) {
+                        rankClass = 'top-first';
+                        rankHtml = '<div class="rank-badge rank-1">🥇</div>';
+                    } else if (index === 1) {
+                        rankClass = 'top-second';
+                        rankHtml = '<div class="rank-badge rank-2">🥈</div>';
+                    } else if (index === 2) {
+                        rankClass = 'top-third';
+                        rankHtml = '<div class="rank-badge rank-3">🥉</div>';
+                    } else {
+                        rankHtml = `<div style="text-align: center; font-weight: bold;">${index + 1}</div>`;
+                    }
+                    const buyStatus = o.buy_status || 'unknown';
+                    const sellStatus = o.sell_status || 'unknown';
+                    const buyOnline = buyStatus === 'online' ? '<span class="badge badge-online">🟢</span>' : '<span class="badge badge-offline">🔴</span>';
+                    const sellOnline = sellStatus === 'online' ? '<span class="badge badge-online">🟢</span>' : '<span class="badge badge-offline">🔴</span>';
+                    return `<tr class="${rankClass}">
+                        <td style="text-align: center;">${rankHtml}</td>
+                        <td>${new Date(o.timestamp).toLocaleString('uk-UA')}</td>
+                        <td>${formatNumber(o.buy_price)} UAH</td>
+                        <td>${formatNumber(o.sell_price)} UAH</td>
+                        <td class="${o.spread >= 1 ? 'spread-high' : ''}">${formatNumber(o.spread, 2)}%</td>
+                        <td class="profit-positive">${formatNumber(buyAmount, 0)} грн</td>
+                        <td class="profit-positive">${formatNumber(sellAmount, 0)} грн</td>
+                        <td class="profit-positive"><strong>${formatProfit(o.profit)} грн</strong></td>
+                        <td class="profit-positive">${formatNumber(o.roi, 2)}%</td>
+                        <td>
+                            <div class="merchant-cell">
+                                <span class="merchant-name">${o.buy_merchant}</span>
+                                <div class="merchant-badges">${buyOnline}<span class="badge badge-iban">🏦 Monobank</span></div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="merchant-cell">
+                                <span class="merchant-name">${o.sell_merchant}</span>
+                                <div class="merchant-badges">${sellOnline}<span class="badge badge-iban">🏦 Monobank</span></div>
+                            </div>
+                        </td>
+                    </tr>`;
+                }).join('');
+            } catch(e) { console.error(e); }
         }
 
         async function confirmOpportunity(id, buyAmount, sellAmount, profit, buyMerchant, sellMerchant) {
@@ -1404,7 +1482,7 @@ HTML_PAGE = """
                 const deals = await resp.json();
                 const tbody = document.getElementById('rejected-deals-body');
                 if (!deals || deals.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="10" class="loading">📭 Немає відхилених угод</td></tr>';
+                    tbody.innerHTML = '<td><td colspan="10" class="loading">📭 Немає відхилених угод</td></tr>';
                     return;
                 }
                 tbody.innerHTML = deals.map(o => {
@@ -1448,67 +1526,51 @@ HTML_PAGE = """
         }
 
         function updateTable(opps) {
-    const tbody = document.getElementById('opportunities-body');
-    if (!opps || opps.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="12" class="loading">📭 Немає можливостей, що очікують підтвердження</td></tr>';
-        return;
-    }
-    tbody.innerHTML = opps.map(o => {
-        // Розрахунок сум в гривнях
-        const buyAmountUAH = o.usdt_amount ? o.usdt_amount * o.buy_price : 0;
-        const sellAmountUAH = o.usdt_amount ? o.usdt_amount * o.sell_price : 0;
-        const profitUAH = o.profit || 0;
-        const spreadClass = o.spread >= 0.7 ? 'spread-high' : '';
-        
-        // Статуси мерчантів
-        const buyStatus = o.buy_status || 'unknown';
-        const sellStatus = o.sell_status || 'unknown';
-        const buyOnline = buyStatus === 'online' ? '<span class="badge badge-online">🟢 Онлайн</span>' : '<span class="badge badge-offline">🔴 Офлайн</span>';
-        const sellOnline = sellStatus === 'online' ? '<span class="badge badge-online">🟢 Онлайн</span>' : '<span class="badge badge-offline">🔴 Офлайн</span>';
-        const ibanBadge = '<span class="badge badge-iban">🏦 Monobank</span>';
-        
-        return `<tr>
-            <td>${new Date(o.timestamp).toLocaleString('uk-UA')}</td>
-            <td>${formatNumber(o.buy_price)} UAH</td>
-            <td>${formatNumber(o.sell_price)} UAH</td>
-            <td class="${spreadClass}">${formatNumber(o.spread, 2)}%</td>
-            <td class="profit-positive"><strong>${formatNumber(buyAmountUAH, 0)} грн</strong><br><small style="color:#666">(потрібно заплатити)</small></td>
-            <td class="profit-positive"><strong>${formatNumber(sellAmountUAH, 0)} грн</strong><br><small style="color:#666">(отримаєте)</small></td>
-            <td class="profit-positive"><strong>${formatProfit(profitUAH)} грн</strong><br><small style="color:#666">(чистий прибуток)</small></td>
-            <td>${formatNumber(o.roi, 2)}%</td>
-            <td>
-                <div class="merchant-cell">
-                    <span class="merchant-name">${o.buy_merchant}</span>
-                    <div class="merchant-badges">
-                        ${buyOnline}
-                        ${ibanBadge}
-                        ${o.buy_is_recommended ? '<span class="badge badge-recommended">⭐ Рекомендовано</span>' : ''}
-                    </div>
-                    <div class="limits-cell" style="font-size: 11px; margin-top: 5px;">
-                        📋 ${formatNumber(o.buy_min_amount, 0)}-${formatNumber(o.buy_max_amount, 0)} UAH
-                    </div>
-                </div>
-            </td>
-            <td>
-                <div class="merchant-cell">
-                    <span class="merchant-name">${o.sell_merchant}</span>
-                    <div class="merchant-badges">
-                        ${sellOnline}
-                        ${ibanBadge}
-                        ${o.sell_is_recommended ? '<span class="badge badge-recommended">⭐ Рекомендовано</span>' : ''}
-                    </div>
-                    <div class="limits-cell" style="font-size: 11px; margin-top: 5px;">
-                        📋 ${formatNumber(o.sell_min_amount, 0)}-${formatNumber(o.sell_max_amount, 0)} UAH
-                    </div>
-                </div>
-            </td>
-            <td>
-                <button class="btn-success" onclick="confirmOpportunity(${o.id}, ${buyAmountUAH}, ${sellAmountUAH}, ${profitUAH}, '${o.buy_merchant}', '${o.sell_merchant}')">✅ Підтвердити</button>
-                <button class="btn-danger" onclick="rejectOpportunity(${o.id})">❌ Відхилити</button>
-            </td>
-        </tr>`;
-    }).join('');
-}
+            const tbody = document.getElementById('opportunities-body');
+            if (!opps || opps.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" class="loading">📭 Немає можливостей, що очікують підтвердження</td></tr>';
+                return;
+            }
+            tbody.innerHTML = opps.map(o => {
+                const buyAmountUAH = o.usdt_amount ? o.usdt_amount * o.buy_price : 0;
+                const sellAmountUAH = o.usdt_amount ? o.usdt_amount * o.sell_price : 0;
+                const profitUAH = o.profit || 0;
+                const spreadClass = o.spread >= 0.7 ? 'spread-high' : '';
+                const buyStatus = o.buy_status || 'unknown';
+                const sellStatus = o.sell_status || 'unknown';
+                const buyOnline = buyStatus === 'online' ? '<span class="badge badge-online">🟢 Онлайн</span>' : '<span class="badge badge-offline">🔴 Офлайн</span>';
+                const sellOnline = sellStatus === 'online' ? '<span class="badge badge-online">🟢 Онлайн</span>' : '<span class="badge badge-offline">🔴 Офлайн</span>';
+                const ibanBadge = '<span class="badge badge-iban">🏦 Monobank</span>';
+                return `<tr>
+                    <td>${new Date(o.timestamp).toLocaleString('uk-UA')}</td>
+                    <td>${formatNumber(o.buy_price)} UAH</td>
+                    <td>${formatNumber(o.sell_price)} UAH</td>
+                    <td class="${spreadClass}">${formatNumber(o.spread, 2)}%</td>
+                    <td class="profit-positive"><strong>${formatNumber(buyAmountUAH, 0)} грн</strong><br><small style="color:#666">(потрібно заплатити)</small></td>
+                    <td class="profit-positive"><strong>${formatNumber(sellAmountUAH, 0)} грн</strong><br><small style="color:#666">(отримаєте)</small></td>
+                    <td class="profit-positive"><strong>${formatProfit(profitUAH)} грн</strong><br><small style="color:#666">(чистий прибуток)</small></td>
+                    <td>${formatNumber(o.roi, 2)}%</td>
+                    <td>
+                        <div class="merchant-cell">
+                            <span class="merchant-name">${o.buy_merchant}</span>
+                            <div class="merchant-badges">${buyOnline}${ibanBadge}${o.buy_is_recommended ? '<span class="badge badge-recommended">⭐ Рекомендовано</span>' : ''}</div>
+                            <div class="limits-cell">📋 ${formatNumber(o.buy_min_amount, 0)}-${formatNumber(o.buy_max_amount, 0)} UAH</div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="merchant-cell">
+                            <span class="merchant-name">${o.sell_merchant}</span>
+                            <div class="merchant-badges">${sellOnline}${ibanBadge}${o.sell_is_recommended ? '<span class="badge badge-recommended">⭐ Рекомендовано</span>' : ''}</div>
+                            <div class="limits-cell">📋 ${formatNumber(o.sell_min_amount, 0)}-${formatNumber(o.sell_max_amount, 0)} UAH</div>
+                        </div>
+                    </td>
+                    <td>
+                        <button class="btn-success" onclick="confirmOpportunity(${o.id}, ${buyAmountUAH}, ${sellAmountUAH}, ${profitUAH}, '${o.buy_merchant}', '${o.sell_merchant}')">✅ Підтвердити</button>
+                        <button class="btn-danger" onclick="rejectOpportunity(${o.id})">❌ Відхилити</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
 
         function updateCharts(opps) {
             if (!opps || opps.length === 0) return;
@@ -1516,14 +1578,12 @@ HTML_PAGE = """
             const times = rev.map(o => new Date(o.timestamp).toLocaleString('uk-UA'));
             const spreads = rev.map(o => o.spread);
             const profits = rev.map(o => o.profit);
-
             const spreadTrace = {x: times, y: spreads, type: 'scatter', mode: 'lines+markers', line: {color: '#ff9800', width: 2}};
             if (spreadChart) {
                 Plotly.react('spread-chart', [spreadTrace], {title:'', xaxis:{title:'Час'}, yaxis:{title:'Спред (%)'}});
             } else {
                 spreadChart = Plotly.newPlot('spread-chart', [spreadTrace], {title:'', xaxis:{title:'Час'}, yaxis:{title:'Спред (%)'}});
             }
-
             const profitTrace = {x: times, y: profits, type: 'bar', marker: {color: profits.map(p => p >= 0 ? '#4caf50' : '#f44336')}};
             if (profitChart) {
                 Plotly.react('profit-chart', [profitTrace], {title:'', xaxis:{title:'Час'}, yaxis:{title:'Прибуток (UAH)'}});
@@ -1572,6 +1632,7 @@ HTML_PAGE = """
             loadRejectedDeals();
             loadLogs();
             loadHeatmap();
+            loadTopOpportunities();
         }
 
         // Ініціалізація
@@ -1581,6 +1642,7 @@ HTML_PAGE = """
         loadRejectedDeals();
         loadLogs();
         loadHeatmap();
+        loadTopOpportunities();
         loadSettings();
 
         // Оновлення кожні 5 секунд
@@ -1591,6 +1653,7 @@ HTML_PAGE = """
             loadRejectedDeals();
             loadLogs();
             loadHeatmap();
+            loadTopOpportunities();
         }, 5000);
     </script>
 </body>
@@ -1607,23 +1670,18 @@ async def get_dashboard():
 async def get_settings():
     """Отримати поточні налаштування"""
     return {
-        # Telegram
         "TELEGRAM_BOT_TOKEN": settings.TELEGRAM_BOT_TOKEN or "",
         "TELEGRAM_CHAT_ID": settings.TELEGRAM_CHAT_ID or "",
-        # Торгові параметри
         "STARTING_CAPITAL": settings.STARTING_CAPITAL,
         "MIN_SPREAD_PERCENT": settings.MIN_SPREAD_PERCENT,
         "MIN_DEAL_AMOUNT": settings.MIN_DEAL_AMOUNT,
         "MAX_DEAL_AMOUNT": settings.MAX_DEAL_AMOUNT,
         "SCAN_INTERVAL_SECONDS": settings.SCAN_INTERVAL_SECONDS,
         "SLIPPAGE_RESERVE_PERCENT": settings.SLIPPAGE_RESERVE_PERCENT,
-        # Фільтри мерчантів
         "MIN_COMPLETION_RATE": settings.MIN_COMPLETION_RATE,
         "MIN_ORDERS_COUNT": settings.MIN_ORDERS_COUNT,
         "MERCHANT_ONLINE_ONLY": settings.MERCHANT_ONLINE_ONLY,
-        # НБУ
         "NBU_MONTHLY_LIMIT": settings.NBU_MONTHLY_LIMIT,
-        # Інші
         "COOLDOWN_SECONDS": settings.COOLDOWN_SECONDS
     }
 
@@ -1631,55 +1689,35 @@ async def get_settings():
 @app.post("/api/settings")
 async def save_settings(request: dict):
     """Зберегти налаштування в .env"""
-    import os
     from pathlib import Path
-
     try:
-        # Правильний шлях до .env (корінь проекту)
         env_path = Path(__file__).parent.parent / '.env'
-
-        print(f"Looking for .env at: {env_path}")  # Для діагностики
-
-        # Якщо файлу немає - створюємо
         if not env_path.exists():
             with open(env_path, 'w') as f:
                 f.write("# P2P Arbitrage Bot Configuration\n")
-
-        # Читаємо поточний .env
         with open(env_path, 'r') as f:
             lines = f.readlines()
-
-        # Всі налаштування для збереження
         new_settings = {
-            # Telegram
             "TELEGRAM_BOT_TOKEN": request.get("TELEGRAM_BOT_TOKEN", ""),
             "TELEGRAM_CHAT_ID": request.get("TELEGRAM_CHAT_ID", ""),
-            # Торгові параметри
             "STARTING_CAPITAL": str(request.get("STARTING_CAPITAL", 40000)),
             "MIN_SPREAD_PERCENT": str(request.get("MIN_SPREAD_PERCENT", 0.98)),
             "MIN_DEAL_AMOUNT": str(request.get("MIN_DEAL_AMOUNT", 20000)),
             "MAX_DEAL_AMOUNT": str(request.get("MAX_DEAL_AMOUNT", 42000)),
             "SCAN_INTERVAL_SECONDS": str(request.get("SCAN_INTERVAL_SECONDS", 5)),
             "SLIPPAGE_RESERVE_PERCENT": str(request.get("SLIPPAGE_RESERVE_PERCENT", 0.2)),
-            # Фільтри мерчантів
             "MIN_COMPLETION_RATE": str(request.get("MIN_COMPLETION_RATE", 90)),
             "MIN_ORDERS_COUNT": str(request.get("MIN_ORDERS_COUNT", 50)),
             "MERCHANT_ONLINE_ONLY": "true" if request.get("MERCHANT_ONLINE_ONLY", True) else "false",
-            # НБУ
             "NBU_MONTHLY_LIMIT": str(request.get("NBU_MONTHLY_LIMIT", 120000)),
-            # Інші
             "COOLDOWN_SECONDS": str(request.get("COOLDOWN_SECONDS", 30)),
-            # Фіксовані значення
             "DATABASE_URL": "sqlite:///p2p_arbitrage.db",
             "DASHBOARD_HOST": "0.0.0.0",
             "DASHBOARD_PORT": "5002",
             "LOG_LEVEL": "INFO"
         }
-
-        # Оновлюємо або додаємо параметри
         updated_lines = []
         processed_keys = set()
-
         for line in lines:
             if '=' in line and not line.startswith('#'):
                 key = line.split('=')[0].strip()
@@ -1690,23 +1728,57 @@ async def save_settings(request: dict):
                     updated_lines.append(line)
             else:
                 updated_lines.append(line)
-
-        # Додаємо відсутні параметри
         for key, value in new_settings.items():
             if key not in processed_keys:
                 updated_lines.append(f"{key}={value}\n")
-
-        # Записуємо .env
         with open(env_path, 'w') as f:
             f.writelines(updated_lines)
-
-        # Додаємо лог
         db.add_log("INFO", "Settings updated via web interface")
-
         return {"success": True}
     except Exception as e:
-        print(f"Error saving settings: {e}")  # Для діагностики
         return {"success": False, "error": str(e)}
+
+
+@app.get("/api/top-opportunities")
+async def get_top_opportunities(limit: int = 50, sort_by: str = "profit"):
+    """Отримати топ можливостей за весь час"""
+    from app.database.models import Opportunity
+    from sqlalchemy import create_engine, desc
+    from sqlalchemy.orm import sessionmaker
+    from config.settings import settings
+
+    engine = create_engine(settings.DATABASE_URL)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    try:
+        if sort_by == "spread":
+            order_by = desc(Opportunity.spread_percent)
+        elif sort_by == "roi":
+            order_by = desc(Opportunity.roi_percent)
+        else:
+            order_by = desc(Opportunity.net_profit)
+        opportunities = session.query(Opportunity).filter(
+            Opportunity.net_profit > 0
+        ).order_by(order_by).limit(limit).all()
+        return [
+            {
+                "id": o.id,
+                "timestamp": o.timestamp.isoformat(),
+                "spread": o.spread_percent,
+                "profit": o.net_profit,
+                "roi": o.roi_percent,
+                "buy_price": o.buy_price,
+                "sell_price": o.sell_price,
+                "usdt_amount": o.usdt_amount,
+                "buy_merchant": getattr(o, 'buy_merchant', 'Unknown'),
+                "sell_merchant": getattr(o, 'sell_merchant', 'Unknown'),
+                "buy_status": getattr(o, 'buy_status', 'unknown'),
+                "sell_status": getattr(o, 'sell_status', 'unknown')
+            }
+            for o in opportunities
+        ]
+    finally:
+        session.close()
 
 
 @app.get("/api/opportunities/pending")
@@ -1736,7 +1808,6 @@ async def get_pending_opportunities(limit: int = 100):
                 "usdt_amount": o.usdt_amount,
                 "buy_merchant": getattr(o, 'buy_merchant', 'Unknown'),
                 "sell_merchant": getattr(o, 'sell_merchant', 'Unknown'),
-                # НОВІ ПОЛЯ
                 "buy_min_amount": getattr(o, 'buy_min_amount', 0),
                 "buy_max_amount": getattr(o, 'buy_max_amount', 0),
                 "sell_min_amount": getattr(o, 'sell_min_amount', 0),
@@ -1754,7 +1825,7 @@ async def get_pending_opportunities(limit: int = 100):
 
 @app.get("/api/completed-deals")
 async def get_completed_deals(limit: int = 100):
-    """Отримати виконані угоди (тільки ті, що були підтверджені через кнопку)"""
+    """Отримати виконані угоди"""
     from app.nbu.limits import Transaction
     from sqlalchemy import create_engine, desc
     from sqlalchemy.orm import sessionmaker
@@ -1800,7 +1871,6 @@ async def get_rejected_deals(limit: int = 100):
     try:
         from app.nbu.limits import Transaction
         trans_ids = [t.id for t in session.query(Transaction.id).all()]
-
         if not trans_ids:
             opportunities = session.query(Opportunity).filter(
                 Opportunity.alert_sent == True,
@@ -1812,7 +1882,6 @@ async def get_rejected_deals(limit: int = 100):
                 Opportunity.net_profit > 0,
                 ~Opportunity.id.in_(trans_ids)
             ).order_by(desc(Opportunity.timestamp)).limit(limit).all()
-
         return [
             {
                 "id": o.id,
@@ -1873,22 +1942,17 @@ async def confirm_opportunity(opp_id: int):
         opp = session.query(Opportunity).filter(Opportunity.id == opp_id).first()
         if not opp:
             return {"success": False, "error": "Opportunity not found"}
-
         if opp.alert_sent:
             return {"success": False, "error": "Opportunity already processed"}
-
         current_month = datetime.now().strftime('%Y-%m')
         limit = session.query(NBULimit).filter(NBULimit.month == current_month).first()
         if not limit:
             limit = NBULimit(total_limit=settings.NBU_MONTHLY_LIMIT, used_amount=0, month=current_month)
             session.add(limit)
-
         amount_uah = opp.usdt_amount * opp.buy_price
         if limit.used_amount + amount_uah > limit.total_limit:
             return {"success": False,
                     "error": f"NBU limit exceeded! Need {amount_uah:,.0f}, available {limit.total_limit - limit.used_amount:,.0f}"}
-
-        # Створюємо транзакцію
         transaction = Transaction(
             amount_uah=amount_uah,
             amount_usdt=opp.usdt_amount,
@@ -1900,14 +1964,11 @@ async def confirm_opportunity(opp_id: int):
             status='completed'
         )
         session.add(transaction)
-
         limit.used_amount += amount_uah
         limit.updated_at = datetime.now()
         opp.alert_sent = True
-
         session.commit()
         db.add_log("SUCCESS", f"Opportunity #{opp_id} confirmed! Transaction #{transaction.id} created.")
-
         return {"success": True, "transaction_id": transaction.id}
     except Exception as e:
         session.rollback()
@@ -1931,11 +1992,9 @@ async def reject_opportunity(opp_id: int):
         opp = session.query(Opportunity).filter(Opportunity.id == opp_id).first()
         if not opp:
             return {"success": False, "error": "Opportunity not found"}
-
         opp.alert_sent = True
         session.commit()
         db.add_log("INFO", f"Opportunity #{opp_id} rejected")
-
         return {"success": True}
     except Exception as e:
         session.rollback()
@@ -2021,7 +2080,6 @@ async def reset_database():
             conn.execute(text("DELETE FROM transactions"))
             conn.execute(text("DELETE FROM sqlite_sequence"))
             conn.commit()
-
         from app.nbu.limits import NBULimit
         from datetime import datetime
         from sqlalchemy.orm import sessionmaker
@@ -2034,7 +2092,6 @@ async def reset_database():
             session.commit()
         finally:
             session.close()
-
         db.add_log("INFO", "Database reset by user")
         return {"success": True}
     except Exception as e:
